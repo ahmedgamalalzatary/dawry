@@ -2,7 +2,7 @@
 
 import type { CustomField, EtaMode, MenuItem, StaffOrder } from "@dawry/shared";
 import { useTranslations } from "next-intl";
-import { useId, useState, type FormEvent } from "react";
+import { useId, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,8 +18,6 @@ interface Row {
   quantity: number;
 }
 
-let nextKey = 0;
-const emptyRow = (): Row => ({ key: nextKey++, name: "", quantity: 1 });
 
 export function NewOrderForm({
   menu,
@@ -33,7 +31,10 @@ export function NewOrderForm({
   const t = useTranslations("dashboard");
   const tc = useTranslations("common");
   const id = useId();
-  const [rows, setRows] = useState<Row[]>([emptyRow()]);
+  // Row keys are per form (not module-wide) so server and client render the same ids.
+  const nextKey = useRef(1);
+  const emptyRow = (): Row => ({ key: nextKey.current++, name: "", quantity: 1 });
+  const [rows, setRows] = useState<Row[]>([{ key: 0, name: "", quantity: 1 }]);
   const [mode, setMode] = useState<EtaMode>("countdown");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -50,7 +51,7 @@ export function NewOrderForm({
       const filled = { menuItemId: item.id, name: item.name, quantity: 1 };
       const last = current.at(-1);
       if (last && !last.name) return [...current.slice(0, -1), { ...last, ...filled }];
-      return [...current, { key: nextKey++, ...filled }];
+      return [...current, { key: nextKey.current++, ...filled }];
     });
   }
 

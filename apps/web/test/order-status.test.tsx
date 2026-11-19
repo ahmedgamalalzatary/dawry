@@ -55,11 +55,13 @@ describe("OrderStatusView", () => {
     expect(screen.queryByText(/ahead of you/)).not.toBeInTheDocument();
   });
 
-  it("warns when the order is running late", () => {
-    show({ late: true });
+  it("warns when the order is running late and shows the expected time, not a 0:00 countdown", () => {
+    show({ late: true, etaAt: "2026-11-19T17:55:00Z" });
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Your order is taking a bit longer than expected",
     );
+    expect(screen.queryByText(/Ready in/)).not.toBeInTheDocument();
+    expect(screen.getByText("Expected at 19:55")).toBeInTheDocument();
   });
 
   it("explains a cancelled order and hides the ETA", () => {

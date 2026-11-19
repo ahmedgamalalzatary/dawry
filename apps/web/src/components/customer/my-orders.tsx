@@ -10,12 +10,12 @@ import { orderPath } from "@/lib/routes";
 
 const ACTIVE = new Set(["preparing", "out_for_delivery"]);
 
-export function MyOrders({ initial }: { initial: SavedOrder[] }) {
+export function MyOrders({ initial, renderedAt }: { initial: SavedOrder[]; renderedAt: string }) {
   const t = useTranslations("me");
   const to = useTranslations("order");
   const locale = useLocale();
   const { data } = useLive("/api/me/orders", initial, "/api/me/events");
-  const now = useNow(15_000);
+  const now = useNow(15_000, renderedAt);
 
   if (data.length === 0) return <p className="text-muted-foreground">{t("empty")}</p>;
 

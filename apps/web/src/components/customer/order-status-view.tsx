@@ -56,11 +56,14 @@ export function OrderStatusView({ order, now }: { order: PublicOrder; now: Date 
         <section className="bg-card flex flex-col gap-1 rounded-xl border p-5 text-center">
           <p className="text-lg font-medium">{t("ahead", { count: order.ordersAhead })}</p>
           <p className="text-3xl font-bold tabular-nums">
-            {eta.kind === "countdown" && t("eta.countdown", { remaining: eta.remaining })}
-            {eta.kind === "clock" && t("eta.at", { time: formatTime(eta.clock, locale) })}
-            {eta.kind === "minutes" && t("eta.minutes", { minutes: eta.minutes })}
+            {/* Late: a 0:00 countdown says nothing useful, show the expected time instead. */}
+            {order.late || eta.kind === "clock"
+              ? t("eta.at", { time: formatTime(order.etaAt, locale) })
+              : eta.kind === "countdown"
+                ? t("eta.countdown", { remaining: eta.remaining })
+                : t("eta.minutes", { minutes: eta.minutes })}
           </p>
-          {eta.kind === "countdown" ? (
+          {eta.kind === "countdown" && !order.late ? (
             <p className="text-muted-foreground text-sm">
               {t("eta.at", { time: formatTime(eta.clock, locale) })}
             </p>

@@ -16,6 +16,7 @@ export default async function OrdersPage() {
       menu={menu ?? []}
       fields={fields ?? []}
       slug={me.restaurant?.slug ?? ""}
+      renderedAt={new Date().toISOString()}
     />
   );
 }

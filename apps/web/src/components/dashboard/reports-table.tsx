@@ -13,7 +13,8 @@ export async function ReportsTable({ report }: { report: RestaurantReport }) {
   const t = await getTranslations("reports");
   if (report.days.length === 0) return <p className="text-muted-foreground">{t("empty")}</p>;
 
-  const dash = (n: number | null) => (n === null ? "—" : n);
+  // dir="ltr" keeps the minus sign of early (negative) delays in front in RTL.
+  const dash = (n: number | null) => (n === null ? "—" : <span dir="ltr">{n}</span>);
 
   return (
     <Table>

@@ -5,7 +5,15 @@ import { useTranslations } from "next-intl";
 import { useLive, useNow } from "@/lib/live";
 import { OrderStatusView } from "./order-status-view";
 
-export function LiveOrder({ initial, signedIn }: { initial: PublicOrder; signedIn: boolean }) {
+export function LiveOrder({
+  initial,
+  signedIn,
+  renderedAt,
+}: {
+  initial: PublicOrder;
+  signedIn: boolean;
+  renderedAt: string;
+}) {
   const t = useTranslations("order");
   const slug = initial.restaurant.slug;
   const { data } = useLive(
@@ -13,7 +21,7 @@ export function LiveOrder({ initial, signedIn }: { initial: PublicOrder; signedI
     initial,
     `/api/public/r/${encodeURIComponent(slug)}/events`,
   );
-  const now = useNow();
+  const now = useNow(1000, renderedAt);
   // Lateness follows the ticking clock, not just the last fetch.
   const order = { ...data, late: isLate({ status: data.status, etaAt: new Date(data.etaAt) }, now) };
 

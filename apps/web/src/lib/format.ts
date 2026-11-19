@@ -1,4 +1,4 @@
-import type { EtaMode } from "@dawry/shared";
+import { DEFAULT_TIME_ZONE, type EtaMode } from "@dawry/shared";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -34,10 +34,14 @@ export function newlyLate<T extends { id: string; late: boolean }>(
   return next.filter((o) => o.late && !wasLate.has(o.id));
 }
 
-/** "20:45" style time in the viewer's locale. */
-export function formatTime(iso: string, locale: string) {
-  return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-GB", {
-    hour: "2-digit",
+/**
+ * Clock time in the restaurant's time zone, always with Western digits so it
+ * matches countdowns and invoice numbers (ar: "8:45 م", en: "20:45").
+ */
+export function formatTime(iso: string, locale: string, timeZone = DEFAULT_TIME_ZONE) {
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG-u-nu-latn" : "en-GB", {
+    hour: "numeric",
     minute: "2-digit",
+    timeZone,
   }).format(new Date(iso));
 }

@@ -19,7 +19,7 @@ export default async function OrderPage({ params }: PageProps<"/r/[slug]/[invoic
   return (
     <main className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-8">
       {order ? (
-        <LiveOrder initial={order} signedIn={Boolean(me)} />
+        <LiveOrder initial={order} signedIn={Boolean(me)} renderedAt={new Date().toISOString()} />
       ) : (
         <div className="flex flex-col items-center gap-4 text-center">
           <p className="text-lg">{t("notFound")}</p>

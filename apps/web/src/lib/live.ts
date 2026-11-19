@@ -33,9 +33,13 @@ export function useLive<T>(url: string, initial: T, eventsUrl: string | null) {
   return { data, setData, refresh };
 }
 
-/** The current time, ticking every `intervalMs` (for countdowns and lateness). */
-export function useNow(intervalMs = 1000) {
-  const [now, setNow] = useState(() => new Date());
+/**
+ * The current time, ticking every `intervalMs` (for countdowns and lateness).
+ * `renderedAt` is the server's render time, so the first client render matches
+ * the server HTML exactly (no hydration mismatch).
+ */
+export function useNow(intervalMs = 1000, renderedAt?: string) {
+  const [now, setNow] = useState(() => (renderedAt ? new Date(renderedAt) : new Date()));
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), intervalMs);
     return () => clearInterval(timer);

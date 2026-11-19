@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { etaDisplay, formatCountdown, newlyLate } from "@/lib/format";
+import { etaDisplay, formatCountdown, formatTime, newlyLate } from "@/lib/format";
 
 describe("formatCountdown", () => {
   it("shows minutes and seconds", () => {
@@ -56,5 +56,12 @@ describe("newlyLate", () => {
 
   it("returns nothing on the first load (no previous snapshot)", () => {
     expect(newlyLate(null, [order("1", true)])).toEqual([]);
+  });
+});
+
+describe("formatTime", () => {
+  it("uses Western digits in both languages, in the Cairo time zone", () => {
+    expect(formatTime("2026-11-19T18:45:00Z", "en")).toBe("20:45");
+    expect(formatTime("2026-11-19T18:45:00Z", "ar")).toMatch(/^8:45/);
   });
 });

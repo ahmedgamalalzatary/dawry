@@ -14,11 +14,13 @@ export function OrdersBoard({
   menu,
   fields,
   slug,
+  renderedAt,
 }: {
   initial: StaffOrder[];
   menu: MenuItem[];
   fields: CustomField[];
   slug: string;
+  renderedAt: string;
 }) {
   const t = useTranslations("dashboard");
   const { data, setData, refresh } = useLive(
@@ -26,7 +28,7 @@ export function OrdersBoard({
     initial,
     "/api/restaurant/events",
   );
-  const now = useNow();
+  const now = useNow(1000, renderedAt);
 
   // Lateness follows the ticking clock.
   const orders = useMemo(

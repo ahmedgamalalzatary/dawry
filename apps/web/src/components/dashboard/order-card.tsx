@@ -126,9 +126,11 @@ export function OrderCard({
 
       {order.status === "preparing" ? (
         <p className="text-sm tabular-nums">
-          {eta.kind === "countdown" && to("eta.countdown", { remaining: eta.remaining })}
-          {eta.kind === "clock" && to("eta.at", { time: formatTime(eta.clock, locale) })}
-          {eta.kind === "minutes" && to("eta.minutes", { minutes: eta.minutes })}
+          {order.late || eta.kind === "clock"
+            ? to("eta.at", { time: formatTime(order.etaAt, locale) })
+            : eta.kind === "countdown"
+              ? to("eta.countdown", { remaining: eta.remaining })
+              : to("eta.minutes", { minutes: eta.minutes })}
           {" · "}
           {t("ahead", { count: order.ordersAhead })}
         </p>
