@@ -4,7 +4,8 @@ import * as schema from "./schema";
 
 export function createDb(databaseUrl: string) {
   const pool = mysql.createPool(databaseUrl);
-  return drizzle(pool, { schema, mode: "default" });
+  const db = drizzle(pool, { schema, mode: "default" });
+  return { db, pool };
 }
 
-export type Db = ReturnType<typeof createDb>;
+export type Db = ReturnType<typeof createDb>["db"];

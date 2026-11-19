@@ -3,7 +3,8 @@ import { resolve } from "node:path";
 import { defineConfig } from "drizzle-kit";
 
 // The single .env lives at the repo root.
-const rootEnv = resolve(import.meta.dirname, "../../.env");
+// drizzle-kit scripts run from apps/api.
+const rootEnv = resolve(process.cwd(), "../../.env");
 if (existsSync(rootEnv)) process.loadEnvFile(rootEnv);
 
 export default defineConfig({
