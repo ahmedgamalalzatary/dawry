@@ -196,6 +196,13 @@ ADMIN_PASSWORD=… pnpm --filter @dawry/api admin:create` (production:
   source; `en.ts` must have the same keys, enforced by types and a test).
 - shadcn/ui components, RTL-aware (logical CSS properties: `ms-`, `pe-`, `start-`).
 - Mobile-first: customer pages and the staff order screen must work on a phone.
+- Data flow: server components fetch initial data with the visitor's cookies
+  (`lib/api/server.ts`, `API_INTERNAL_URL`); client components call `/api/*`
+  through the same-origin proxy (`lib/api/client.ts`) and stay fresh with
+  `useLive` (SSE + 30 s fallback). Route guards: `requireKind(...)`.
+- Security headers: a per-request CSP nonce (`src/proxy.ts`), `X-Frame-Options:
+  DENY`, `nosniff`, strict referrer policy. External images (restaurant logos)
+  are https URLs loaded with `referrerPolicy="no-referrer"`.
 - Routes: `/` (find restaurant), `/r/[slug]`, `/r/[slug]/[invoice]`, `/login`, `/signup`, `/me`,
   `/dashboard/*` (owner + staff), `/admin/*` (super-admin).
 
