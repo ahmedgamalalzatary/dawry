@@ -10,6 +10,11 @@ export function publicRoutes(deps: Deps) {
   const { db } = deps;
   const router = Router();
 
+  router.get("/restaurants", async (req, res) => {
+    const q = typeof req.query.q === "string" ? req.query.q : "";
+    res.json(await service.searchRestaurants(db, q));
+  });
+
   router.get("/r/:slug", async (req, res) => {
     const restaurant = await service.findRestaurant(db, String(req.params.slug));
     if (!restaurant) throw notFound();

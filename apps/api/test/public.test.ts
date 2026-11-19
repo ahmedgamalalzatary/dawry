@@ -29,6 +29,20 @@ afterAll(closeTestDb);
 
 const guest = () => client(t.app);
 
+describe("GET /api/public/restaurants", () => {
+  it("lists active restaurants, optionally filtered by name", async () => {
+    const other = await seedRestaurant(t, admin, "Burger Hub");
+    const hidden = await seedRestaurant(t, admin, "Hidden Pizza");
+    await admin.patch(`/api/admin/restaurants/${hidden.id}`, { active: false });
+
+    const all = await guest().get("/api/public/restaurants");
+    expect(all.body.map((x: { name: string }) => x.name)).toEqual(["Burger Hub", "Pizza X"]);
+
+    const found = await guest().get("/api/public/restaurants?q=burg");
+    expect(found.body).toEqual([{ slug: other.slug, name: "Burger Hub", logoUrl: null, phone: null }]);
+  });
+});
+
 describe("GET /api/public/r/:slug", () => {
   it("returns the public restaurant profile", async () => {
     const res = await guest().get(`/api/public/r/${r.slug}`);
@@ -126,5 +140,12 @@ describe("GET /api/public/r/:slug/orders/:invoice", () => {
     const saved = await customer.get("/api/me/orders");
     expect(saved.body).toHaveLength(1);
     expect(saved.body[0]).toMatchObject({ slug: r.slug, invoiceNumber: "1", status: "preparing" });
+  });
+});
+
+describe("restaurant search input", () => {
+  it("treats % and _ as plain characters", async () => {
+    const res = await guest().get("/api/public/restaurants?q=%25");
+    expect(res.body).toEqual([]);
   });
 });

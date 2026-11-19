@@ -8,7 +8,9 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "check": "turbo run build test lint typecheck",
-    "dev": "turbo run dev"
+    "dev": "turbo run dev",
+    "dev:api": "turbo run dev --filter=@dawry/api",
+    "dev:web": "turbo run dev --filter=@dawry/web"
   },
   "devDependencies": {
     "turbo": "^2.5.0",
