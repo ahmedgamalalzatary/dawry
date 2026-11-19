@@ -1,11 +1,15 @@
-// Fills an EMPTY local database with realistic demo data (dev only).
+// Fills a database that has no restaurants yet with realistic demo data.
 //   pnpm --filter @dawry/api db:seed
-// Every demo account uses the password DEV_PASSWORD below.
+// Every demo account uses SEED_PASSWORD, or DEV_PASSWORD below when unset.
+// The super-admin "admin" is only created when the database has no users at all.
+// On a live server (NODE_ENV=production) SEED_PASSWORD is required, because
+// DEV_PASSWORD is public in this repo:
+//   docker compose run --rm -e SEED_PASSWORD=... api node dist/cli/seed-dev.js
 import { businessDay, type CreateOrderInput, type OrderStatus } from "@dawry/shared";
 import { count, eq } from "drizzle-orm";
 import { createAuth } from "../auth";
 import { createDb } from "../db/client";
-import { member, user } from "../db/schema";
+import { member, organization, user } from "../db/schema";
 import { loadEnv } from "../env";
 import * as admin from "../modules/admin/service";
 import * as catalog from "../modules/catalog/service";
@@ -17,11 +21,13 @@ import * as staff from "../modules/staff/service";
 import { createAccount } from "../modules/accounts/service";
 
 const DEV_PASSWORD = "dawry-dev-123";
+const SEED_PASSWORD = process.env.SEED_PASSWORD ?? "";
 
-if (process.env.NODE_ENV === "production") {
-  console.error("Refusing to seed in production.");
+if (process.env.NODE_ENV === "production" && SEED_PASSWORD.length < 12) {
+  console.error("On a live server set SEED_PASSWORD (12+ characters); the dev password is public.");
   process.exit(1);
 }
+const PASSWORD = SEED_PASSWORD || DEV_PASSWORD;
 
 const env = loadEnv();
 const { db, pool } = createDb(env.DATABASE_URL);
@@ -68,13 +74,13 @@ async function seedRestaurant(input: {
     slug: input.slug,
     ownerName: input.ownerName,
     ownerPhone: input.ownerPhone,
-    ownerPassword: DEV_PASSWORD,
+    ownerPassword: PASSWORD,
   });
   await settings.updateSettings(db, r.id, { name: input.name, phone: input.phone, logoUrl: "" });
 
   let creatorId = "";
   for (const [name, username] of input.staff) {
-    creatorId = (await staff.createStaff(auth, db, r.id, { name, username, password: DEV_PASSWORD })).id;
+    creatorId = (await staff.createStaff(auth, db, r.id, { name, username, password: PASSWORD })).id;
   }
   const [owner] = await db
     .select({ id: member.userId })
@@ -171,14 +177,17 @@ async function seedRestaurant(input: {
 }
 
 async function main() {
-  const [{ n }] = (await db.select({ n: count() }).from(user)) as [{ n: number }];
-  if (n > 0) {
-    console.error("The database is not empty. Seed only runs on an empty dev database.");
+  const [{ restaurants }] = (await db.select({ restaurants: count() }).from(organization)) as [{ restaurants: number }];
+  if (restaurants > 0) {
+    console.error("The database already has restaurants. Seed only runs on a database without any.");
     process.exitCode = 1;
     return;
   }
 
-  await admin.createSuperAdmin(auth, db, { name: "مدير المنصة", username: "admin", password: DEV_PASSWORD });
+  const [{ users }] = (await db.select({ users: count() }).from(user)) as [{ users: number }];
+  if (users === 0) {
+    await admin.createSuperAdmin(auth, db, { name: "مدير المنصة", username: "admin", password: PASSWORD });
+  }
 
   const roma = await seedRestaurant({
     name: "بيتزا روما",
@@ -248,7 +257,7 @@ async function main() {
   const customerId = await createAccount(auth, db, {
     name: "سارة علي",
     username: "01009998888",
-    password: DEV_PASSWORD,
+    password: PASSWORD,
   });
   for (const invoice of ["127", "125", "122", "120"]) {
     await publicRepo.saveOrderFor(db, customerId, roma.ids.get(invoice)!);
@@ -258,8 +267,8 @@ async function main() {
   await customerRepo.addFavorite(db, customerId, burger.id);
 
   console.log(`Seeded demo data for ${businessDay(new Date(realNow), timeZone)}.`);
-  console.log(`All demo accounts use the password: ${DEV_PASSWORD}`);
-  console.log("  super-admin: admin");
+  console.log(SEED_PASSWORD ? "All demo accounts use SEED_PASSWORD." : `All demo accounts use the password: ${DEV_PASSWORD}`);
+  if (users === 0) console.log("  super-admin: admin");
   console.log("  owner (بيتزا روما): 01001234567   staff: mona, karim");
   console.log("  owner (برجر هاوس): 01112223333   staff: tamer");
   console.log("  customer: 01009998888");
