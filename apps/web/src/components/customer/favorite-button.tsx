@@ -1,9 +1,11 @@
 "use client";
 
+import { Star } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api/client";
+import { cn } from "@/lib/utils";
 
 export function FavoriteButton({ slug, initial }: { slug: string; initial: boolean }) {
   const t = useTranslations("restaurant");
@@ -23,8 +25,16 @@ export function FavoriteButton({ slug, initial }: { slug: string; initial: boole
   }
 
   return (
-    <Button variant="outline" size="sm" onClick={toggle} disabled={pending} aria-pressed={favorite}>
-      {favorite ? `★ ${t("unfavorite")}` : `☆ ${t("favorite")}`}
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={toggle}
+      disabled={pending}
+      aria-pressed={favorite}
+      className={cn(favorite && "border-brand-strong bg-brand-soft hover:bg-brand-soft")}
+    >
+      <Star aria-hidden className={cn(favorite && "fill-brand text-brand-strong")} />
+      {favorite ? t("unfavorite") : t("favorite")}
     </Button>
   );
 }

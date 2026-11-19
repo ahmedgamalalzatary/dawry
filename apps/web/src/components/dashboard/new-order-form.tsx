@@ -1,15 +1,21 @@
 "use client";
 
 import type { CustomField, EtaMode, MenuItem, StaffOrder } from "@dawry/shared";
+import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useId, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
+import { FormError } from "@/components/ui/form-error";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api/client";
 import { ApiRequestError } from "@/lib/api/errors";
+import { cn } from "@/lib/utils";
+
+const MODES: EtaMode[] = ["countdown", "clock", "minutes"];
+const PRESETS = [10, 15, 20, 30, 45];
 
 interface Row {
   key: number;
@@ -17,7 +23,6 @@ interface Row {
   name: string;
   quantity: number;
 }
-
 
 export function NewOrderForm({
   menu,
@@ -36,6 +41,7 @@ export function NewOrderForm({
   const emptyRow = (): Row => ({ key: nextKey.current++, name: "", quantity: 1 });
   const [rows, setRows] = useState<Row[]>([{ key: 0, name: "", quantity: 1 }]);
   const [mode, setMode] = useState<EtaMode>("countdown");
+  const [minutes, setMinutes] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const activeMenu = menu.filter((m) => m.active);
@@ -89,6 +95,7 @@ export function NewOrderForm({
       formElement.reset();
       setRows([emptyRow()]);
       setMode("countdown");
+      setMinutes("");
       onCreated?.(order);
     } catch (err) {
       if (err instanceof ApiRequestError && err.status === 409) setError(t("duplicateInvoice"));
@@ -102,22 +109,29 @@ export function NewOrderForm({
   const field = (name: string) => `${id}-${name}`;
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+    <form onSubmit={onSubmit} className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
         <Label htmlFor={field("invoice")}>{t("invoice")}</Label>
-        <Input id={field("invoice")} name="invoiceNumber" required maxLength={32} dir="ltr" />
+        <Input
+          id={field("invoice")}
+          name="invoiceNumber"
+          required
+          maxLength={32}
+          dir="ltr"
+          inputMode="numeric"
+          autoComplete="off"
+          className="h-12 text-center text-2xl font-bold tabular-nums md:text-2xl"
+        />
       </div>
 
       <fieldset className="flex flex-col gap-3">
-        <legend className="mb-2 text-sm font-medium">{t("items")}</legend>
+        <legend className="mb-3 text-sm font-semibold">{t("items")}</legend>
         {activeMenu.length > 0 ? (
           <div className="flex flex-col gap-2">
-            <Label htmlFor={field("menu")}>{t("fromMenu")}</Label>
-            <NativeSelect
-              id={field("menu")}
-              value=""
-              onChange={(e) => pickFromMenu(e.target.value)}
-            >
+            <Label htmlFor={field("menu")} className="text-muted-foreground text-xs">
+              {t("fromMenu")}
+            </Label>
+            <NativeSelect id={field("menu")} value="" onChange={(e) => pickFromMenu(e.target.value)}>
               <option value="">—</option>
               {activeMenu.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -129,9 +143,11 @@ export function NewOrderForm({
         ) : null}
 
         {rows.map((row) => (
-          <div key={row.key} className="grid grid-cols-[1fr_6rem_auto] items-end gap-2">
-            <div className="flex flex-col gap-1">
-              <Label htmlFor={field(`name-${row.key}`)}>{t("itemName")}</Label>
+          <div key={row.key} className="grid grid-cols-[1fr_4.5rem_auto] items-end gap-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={field(`name-${row.key}`)} className="text-muted-foreground text-xs">
+                {t("itemName")}
+              </Label>
               <Input
                 id={field(`name-${row.key}`)}
                 value={row.name}
@@ -140,13 +156,16 @@ export function NewOrderForm({
                 onChange={(e) => updateRow(row.key, { name: e.target.value, menuItemId: undefined })}
               />
             </div>
-            <div className="flex flex-col gap-1">
-              <Label htmlFor={field(`qty-${row.key}`)}>{t("quantity")}</Label>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={field(`qty-${row.key}`)} className="text-muted-foreground text-xs">
+                {t("quantity")}
+              </Label>
               <Input
                 id={field(`qty-${row.key}`)}
                 type="number"
                 min={1}
                 max={999}
+                className="text-center"
                 value={row.quantity || ""}
                 onChange={(e) => updateRow(row.key, { quantity: Number(e.target.value) })}
               />
@@ -154,40 +173,66 @@ export function NewOrderForm({
             <Button
               type="button"
               variant="ghost"
+              size="icon"
+              aria-label={tc("remove")}
+              title={tc("remove")}
+              className="text-muted-foreground hover:text-destructive"
               disabled={rows.length === 1}
               onClick={() => setRows((current) => current.filter((r) => r.key !== row.key))}
             >
-              {tc("remove")}
+              <Trash2 />
             </Button>
           </div>
         ))}
-        <Button type="button" variant="outline" onClick={() => setRows((r) => [...r, emptyRow()])}>
+        <Button
+          type="button"
+          variant="outline"
+          className="border-dashed"
+          onClick={() => setRows((r) => [...r, emptyRow()])}
+        >
+          <Plus aria-hidden />
           {t("addItem")}
         </Button>
       </fieldset>
 
-      {activeFields.map((f) => (
-        <div key={f.id} className="flex flex-col gap-2">
-          <Label htmlFor={field(`f-${f.id}`)}>
-            {f.label}
-            {f.required ? " *" : ""}
-          </Label>
-          <Input id={field(`f-${f.id}`)} name={`field-${f.id}`} required={f.required} maxLength={500} />
+      {activeFields.length > 0 ? (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+          {activeFields.map((f) => (
+            <div key={f.id} className="flex flex-col gap-2">
+              <Label htmlFor={field(`f-${f.id}`)}>
+                {f.label}
+                {f.required ? <span className="text-destructive">*</span> : null}
+              </Label>
+              <Input id={field(`f-${f.id}`)} name={`field-${f.id}`} required={f.required} maxLength={500} />
+            </div>
+          ))}
         </div>
-      ))}
+      ) : null}
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor={field("mode")}>{t("eta")}</Label>
-          <NativeSelect
-            id={field("mode")}
-            value={mode}
-            onChange={(e) => setMode(e.target.value as EtaMode)}
-          >
-            <option value="countdown">{t("etaMode.countdown")}</option>
-            <option value="clock">{t("etaMode.clock")}</option>
-            <option value="minutes">{t("etaMode.minutes")}</option>
-          </NativeSelect>
+      <fieldset className="flex flex-col gap-3">
+        <legend className="mb-3 text-sm font-semibold">{t("eta")}</legend>
+        <div className="bg-secondary/70 grid grid-cols-3 gap-1 rounded-xl p-1">
+          {MODES.map((m) => (
+            <label
+              key={m}
+              className={cn(
+                "has-focus-visible:ring-ring/60 flex min-h-9 cursor-pointer items-center justify-center rounded-lg px-2 py-1 text-center text-xs font-medium transition-colors has-focus-visible:ring-3",
+                mode === m
+                  ? "bg-card text-foreground shadow-[0_1px_2px_rgb(22_35_63/0.12),0_0_0_1px_var(--border)]"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <input
+                type="radio"
+                name="etaMode"
+                value={m}
+                checked={mode === m}
+                onChange={() => setMode(m)}
+                className="sr-only"
+              />
+              {t(`etaMode.${m}`)}
+            </label>
+          ))}
         </div>
         {mode === "clock" ? (
           <div className="flex flex-col gap-2">
@@ -197,14 +242,44 @@ export function NewOrderForm({
         ) : (
           <div className="flex flex-col gap-2">
             <Label htmlFor={field("minutes")}>{t("minutes")}</Label>
-            <Input id={field("minutes")} name="minutes" type="number" min={1} max={600} required />
+            <Input
+              id={field("minutes")}
+              name="minutes"
+              type="number"
+              min={1}
+              max={600}
+              required
+              value={minutes}
+              onChange={(e) => setMinutes(e.target.value)}
+            />
+            <div role="group" aria-label={t("presets")} className="flex flex-wrap gap-1.5">
+              {PRESETS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setMinutes(String(p))}
+                  aria-pressed={minutes === String(p)}
+                  className={cn(
+                    "focus-visible:ring-ring/60 h-8 min-w-11 cursor-pointer rounded-full border px-3 text-sm font-medium tabular-nums transition-colors outline-none focus-visible:ring-3",
+                    minutes === String(p)
+                      ? "border-brand-strong bg-brand text-brand-foreground"
+                      : "bg-card hover:border-foreground/30",
+                  )}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
           </div>
         )}
-      </div>
+      </fieldset>
 
-      <details className="rounded-lg border p-3">
-        <summary className="cursor-pointer text-sm font-medium">{t("customerName")} …</summary>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+      <details className="group bg-muted/40 rounded-xl border">
+        <summary className="hover:text-foreground text-muted-foreground flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-medium [&::-webkit-details-marker]:hidden">
+          {t("customerDetails")}
+          <ChevronDown aria-hidden className="size-4 transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="grid gap-3 px-4 pb-4 sm:grid-cols-2 lg:grid-cols-1">
           <div className="flex flex-col gap-2">
             <Label htmlFor={field("cname")}>{t("customerName")}</Label>
             <Input id={field("cname")} name="customerName" maxLength={100} />
@@ -213,23 +288,20 @@ export function NewOrderForm({
             <Label htmlFor={field("cphone")}>{t("customerPhone")}</Label>
             <Input id={field("cphone")} name="customerPhone" type="tel" dir="ltr" maxLength={20} />
           </div>
-          <div className="flex flex-col gap-2 sm:col-span-2">
+          <div className="flex flex-col gap-2 sm:col-span-2 lg:col-span-1">
             <Label htmlFor={field("address")}>{t("address")}</Label>
             <Input id={field("address")} name="address" maxLength={500} />
           </div>
-          <div className="flex flex-col gap-2 sm:col-span-2">
+          <div className="flex flex-col gap-2 sm:col-span-2 lg:col-span-1">
             <Label htmlFor={field("notes")}>{t("notes")}</Label>
             <Textarea id={field("notes")} name="notes" maxLength={500} />
           </div>
         </div>
       </details>
 
-      {error ? (
-        <p role="alert" className="text-destructive text-sm">
-          {error}
-        </p>
-      ) : null}
-      <Button type="submit" disabled={pending}>
+      <FormError>{error}</FormError>
+      <Button type="submit" variant="brand" size="lg" disabled={pending}>
+        <Plus aria-hidden />
         {t("create")}
       </Button>
     </form>

@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field } from "@/components/ui/field";
+import { FormError } from "@/components/ui/form-error";
+import { PasswordInput } from "@/components/ui/password-input";
 import { api } from "@/lib/api/client";
 import { ApiRequestError } from "@/lib/api/errors";
 
@@ -38,37 +40,25 @@ export function SignUpForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="name">{t("name")}</Label>
+    <form onSubmit={onSubmit} className="flex flex-col gap-5">
+      <Field id="name" label={t("name")}>
         <Input id="name" name="name" autoComplete="name" required maxLength={100} />
-      </div>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="phone">{t("phone")}</Label>
+      </Field>
+      <Field id="phone" label={t("phone")}>
         <Input id="phone" name="phone" type="tel" autoComplete="tel" required dir="ltr" />
-      </div>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="password">{t("password")}</Label>
-        <Input
+      </Field>
+      <Field id="password" label={t("password")} hint={t("passwordHint")}>
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="new-password"
           required
           minLength={8}
-          dir="ltr"
           aria-describedby="password-hint"
         />
-        <p id="password-hint" className="text-muted-foreground text-xs">
-          {t("passwordHint")}
-        </p>
-      </div>
-      {error ? (
-        <p role="alert" className="text-destructive text-sm">
-          {error}
-        </p>
-      ) : null}
-      <Button type="submit" disabled={pending}>
+      </Field>
+      <FormError>{error}</FormError>
+      <Button type="submit" size="lg" disabled={pending}>
         {t("signUp")}
       </Button>
     </form>

@@ -1,14 +1,15 @@
 import type { AdminRestaurant, PlatformStats } from "@dawry/shared";
+import { CalendarDays, CircleCheck, ClipboardList, Store, UsersRound } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { AdminRestaurants } from "@/components/admin/admin-restaurants";
 import { requireKind, serverGet } from "@/lib/api/server";
 
-const STAT_KEYS = [
-  "restaurants",
-  "activeRestaurants",
-  "ordersToday",
-  "ordersLast30Days",
-  "customers",
+const STATS = [
+  { key: "restaurants", icon: Store },
+  { key: "activeRestaurants", icon: CircleCheck },
+  { key: "ordersToday", icon: ClipboardList },
+  { key: "ordersLast30Days", icon: CalendarDays },
+  { key: "customers", icon: UsersRound },
 ] as const;
 
 export default async function AdminPage() {
@@ -20,14 +21,24 @@ export default async function AdminPage() {
   ]);
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-6">
-      <h1 className="text-2xl font-bold">{t("title")}</h1>
+    <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 pt-6 pb-16">
+      <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
       {stats ? (
-        <dl className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-          {STAT_KEYS.map((key) => (
-            <div key={key} className="bg-card flex flex-col gap-1 rounded-xl border p-4">
-              <dt className="text-muted-foreground text-sm">{t(`stats.${key}`)}</dt>
-              <dd className="text-2xl font-bold tabular-nums">{stats[key]}</dd>
+        <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {STATS.map(({ key, icon: Icon }, index) => (
+            <div
+              key={key}
+              className={
+                index === 2
+                  ? "bg-brand text-brand-foreground flex flex-col gap-3 rounded-2xl p-4"
+                  : "bg-card flex flex-col gap-3 rounded-2xl border p-4"
+              }
+            >
+              <dt className="flex items-center gap-2 text-sm font-medium opacity-80">
+                <Icon aria-hidden className="size-4" />
+                {t(`stats.${key}`)}
+              </dt>
+              <dd className="text-4xl leading-none font-bold tabular-nums">{stats[key]}</dd>
             </div>
           ))}
         </dl>

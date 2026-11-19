@@ -1,12 +1,16 @@
 "use client";
 
 import type { StaffMember } from "@dawry/shared";
+import { Trash2, UserPlus, UsersRound } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
+import { FormError } from "@/components/ui/form-error";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
+import { ResetPasswordButton } from "@/components/ui/reset-password-dialog";
 import { api } from "@/lib/api/client";
 import { ApiRequestError } from "@/lib/api/errors";
 
@@ -15,12 +19,14 @@ export function StaffManager({ initial }: { initial: StaffMember[] }) {
   const tc = useTranslations("common");
   const [staff, setStaff] = useState(initial);
   const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
 
   async function add(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
     setError(null);
+    setPending(true);
     try {
       const created = await api<StaffMember>("/api/restaurant/staff", {
         body: {
@@ -33,6 +39,8 @@ export function StaffManager({ initial }: { initial: StaffMember[] }) {
       formElement.reset();
     } catch (err) {
       setError(err instanceof ApiRequestError && err.status < 500 ? err.message : tc("error"));
+    } finally {
+      setPending(false);
     }
   }
 
@@ -46,42 +54,53 @@ export function StaffManager({ initial }: { initial: StaffMember[] }) {
     }
   }
 
-  async function resetPassword(member: StaffMember) {
-    const password = window.prompt(`${t("newPassword")} (${member.username})`);
-    if (!password) return;
+  async function resetPassword(member: StaffMember, password: string) {
     try {
       await api(`/api/restaurant/staff/${member.id}/password`, { body: { password } });
       toast.success(tc("saved"));
     } catch (err) {
-      toast.error(err instanceof ApiRequestError ? err.message : tc("error"));
+      throw new Error(err instanceof ApiRequestError ? err.message : tc("error"));
     }
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="grid items-start gap-6 lg:grid-cols-[1fr_22rem]">
       {staff.length === 0 ? (
-        <p className="text-muted-foreground">{t("empty")}</p>
+        <div className="text-muted-foreground flex flex-col items-center gap-3 rounded-2xl border border-dashed px-6 py-14 text-center">
+          <UsersRound aria-hidden className="size-9 opacity-50" />
+          <p>{t("empty")}</p>
+        </div>
       ) : (
-        <ul className="divide-y rounded-lg border">
+        <ul className="bg-card divide-y rounded-2xl border">
           {staff.map((m) => (
-            <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
-              <span className="flex flex-col">
-                <span className="font-medium">{m.name}</span>
+            <li key={m.id} className="flex flex-wrap items-center gap-3 p-4">
+              <span
+                aria-hidden
+                className="bg-brand-soft flex size-10 shrink-0 items-center justify-center rounded-full font-bold"
+              >
+                {m.name.slice(0, 1)}
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate font-semibold">{m.name}</span>
                 <span className="text-muted-foreground text-sm" dir="ltr">
                   {m.username}
                 </span>
               </span>
-              <span className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => resetPassword(m)}>
-                  {t("resetPassword")}
-                </Button>
+              <span className="flex items-center gap-1.5">
+                <ResetPasswordButton
+                  label={t("resetPassword")}
+                  title={t("newPassword")}
+                  subject={`${m.name} (${m.username})`}
+                  onSave={(password) => resetPassword(m, password)}
+                />
                 <Button
-                  size="sm"
+                  size="icon-sm"
                   variant="destructive"
                   aria-label={`${tc("remove")} ${m.username}`}
+                  title={tc("remove")}
                   onClick={() => remove(m)}
                 >
-                  {tc("remove")}
+                  <Trash2 />
                 </Button>
               </span>
             </li>
@@ -89,13 +108,15 @@ export function StaffManager({ initial }: { initial: StaffMember[] }) {
         </ul>
       )}
 
-      <form onSubmit={add} className="grid gap-3 rounded-lg border p-4 sm:grid-cols-3">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="staff-name">{t("name")}</Label>
+      <form onSubmit={add} className="bg-card flex flex-col gap-4 rounded-2xl border p-5">
+        <h3 className="flex items-center gap-2 font-semibold">
+          <UserPlus aria-hidden className="text-brand-strong size-5" />
+          {t("add")}
+        </h3>
+        <Field id="staff-name" label={t("name")}>
           <Input id="staff-name" name="name" required maxLength={100} />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="staff-username">{t("username")}</Label>
+        </Field>
+        <Field id="staff-username" label={t("username")} hint={t("usernameHint")}>
           <Input
             id="staff-username"
             name="username"
@@ -104,30 +125,15 @@ export function StaffManager({ initial }: { initial: StaffMember[] }) {
             maxLength={30}
             pattern="[A-Za-z0-9_.]*[A-Za-z][A-Za-z0-9_.]*"
             dir="ltr"
+            autoComplete="off"
             aria-describedby="staff-username-hint"
           />
-          <p id="staff-username-hint" className="text-muted-foreground text-xs">
-            {t("usernameHint")}
-          </p>
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="staff-password">{t("password")}</Label>
-          <Input
-            id="staff-password"
-            name="password"
-            type="password"
-            required
-            minLength={8}
-            autoComplete="new-password"
-            dir="ltr"
-          />
-        </div>
-        {error ? (
-          <p role="alert" className="text-destructive text-sm sm:col-span-3">
-            {error}
-          </p>
-        ) : null}
-        <Button type="submit" className="sm:col-span-3">
+        </Field>
+        <Field id="staff-password" label={t("password")}>
+          <PasswordInput id="staff-password" name="password" required minLength={8} autoComplete="new-password" />
+        </Field>
+        <FormError>{error}</FormError>
+        <Button type="submit" disabled={pending}>
           {t("add")}
         </Button>
       </form>

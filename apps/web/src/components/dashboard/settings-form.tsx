@@ -1,20 +1,29 @@
 "use client";
 
 import type { RestaurantSettings } from "@dawry/shared";
+import { Copy, ExternalLink } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState, type FormEvent } from "react";
+import { useState, useSyncExternalStore, type FormEvent } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { RestaurantAvatar } from "@/components/customer/restaurant-avatar";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api/client";
 import { ApiRequestError } from "@/lib/api/errors";
+import { cn } from "@/lib/utils";
+
+const noop = () => () => {};
 
 export function SettingsForm({ initial }: { initial: RestaurantSettings }) {
   const t = useTranslations("settings");
   const tc = useTranslations("common");
   const [pending, setPending] = useState(false);
+  const [name, setName] = useState(initial.name);
+  const [logoUrl, setLogoUrl] = useState(initial.logoUrl);
   const link = `/r/${initial.slug}`;
+  // The site's own address, known only in the browser.
+  const origin = useSyncExternalStore(noop, () => window.location.origin, () => "");
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -37,36 +46,74 @@ export function SettingsForm({ initial }: { initial: RestaurantSettings }) {
     }
   }
 
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(origin + link);
+      toast.success(t("copied"));
+    } catch {
+      toast.error(tc("error"));
+    }
+  }
+
   return (
-    <form onSubmit={onSubmit} className="flex max-w-lg flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="s-name">{t("name")}</Label>
-        <Input id="s-name" name="name" defaultValue={initial.name} required maxLength={100} />
-      </div>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="s-phone">{t("phone")}</Label>
-        <Input id="s-phone" name="phone" type="tel" defaultValue={initial.phone} dir="ltr" />
-      </div>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="s-logo">{t("logoUrl")}</Label>
-        <Input
-          id="s-logo"
-          name="logoUrl"
-          type="url"
-          defaultValue={initial.logoUrl}
-          placeholder="https://"
-          dir="ltr"
-        />
-      </div>
-      <div className="flex flex-col gap-1 text-sm">
-        <span className="text-muted-foreground">{t("publicLink")}</span>
-        <a href={link} className="text-primary underline" dir="ltr">
-          {link}
-        </a>
-      </div>
-      <Button type="submit" disabled={pending}>
-        {tc("save")}
-      </Button>
-    </form>
+    <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem]">
+      <form onSubmit={onSubmit} className="bg-card flex flex-col gap-5 rounded-2xl border p-5 sm:p-6">
+        <Field id="s-name" label={t("name")}>
+          <Input id="s-name" name="name" value={name} onChange={(e) => setName(e.target.value)} required maxLength={100} />
+        </Field>
+        <Field id="s-phone" label={t("phone")}>
+          <Input id="s-phone" name="phone" type="tel" defaultValue={initial.phone} dir="ltr" />
+        </Field>
+        <Field id="s-logo" label={t("logoUrl")}>
+          <Input
+            id="s-logo"
+            name="logoUrl"
+            type="url"
+            value={logoUrl}
+            onChange={(e) => setLogoUrl(e.target.value)}
+            placeholder="https://"
+            dir="ltr"
+          />
+        </Field>
+        <Button type="submit" className="self-start" disabled={pending}>
+          {tc("save")}
+        </Button>
+      </form>
+
+      <aside className="flex flex-col gap-4">
+        {/* What customers will see */}
+        <div className="bg-card flex flex-col items-center gap-3 rounded-2xl border p-6 text-center">
+          <RestaurantAvatar
+            name={name || "?"}
+            logoUrl={/^https?:\/\//.test(logoUrl) ? logoUrl : null}
+            className="size-16 rounded-2xl text-2xl"
+          />
+          <p className="text-lg font-bold">{name}</p>
+          <p className="text-muted-foreground text-xs">{t("preview")}</p>
+        </div>
+        <div className="bg-card flex flex-col gap-3 rounded-2xl border p-5">
+          <span className="text-sm font-semibold">{t("publicLink")}</span>
+          <code className="bg-muted truncate rounded-lg px-3 py-2 text-sm" dir="ltr">
+            {origin}
+            {link}
+          </code>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" size="sm" className="flex-1" onClick={copyLink}>
+              <Copy aria-hidden />
+              {t("copy")}
+            </Button>
+            <a
+              href={link}
+              target="_blank"
+              rel="noreferrer"
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "flex-1")}
+            >
+              <ExternalLink aria-hidden />
+              {t("open")}
+            </a>
+          </div>
+        </div>
+      </aside>
+    </div>
   );
 }

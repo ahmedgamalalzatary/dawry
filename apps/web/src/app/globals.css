@@ -4,29 +4,22 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Dawry design tokens: the queue ticket.
+ * Saffron ticket stock, deep ink print, cool paper ground.
+ * Status colours are fixed roles: preparing = saffron, on the way = teal,
+ * delivered = green, late = chili, cancelled/destructive = brick.
+ */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-soft: var(--destructive-soft);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -39,92 +32,237 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-soft: var(--brand-soft);
+  --color-ink: var(--ink);
+  --color-ink-foreground: var(--ink-foreground);
+  --color-teal: var(--teal);
+  --color-teal-soft: var(--teal-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-chili: var(--chili);
+  --color-chili-soft: var(--chili-soft);
+
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xl: calc(var(--radius) * 1.35);
+  --radius-2xl: calc(var(--radius) * 1.75);
+  --radius-3xl: calc(var(--radius) * 2.25);
+  --radius-4xl: calc(var(--radius) * 2.75);
+
+  --shadow-ticket: 0 1px 0 0 var(--ticket-edge), 0 10px 24px -14px var(--ticket-shadow);
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius: 0.75rem;
+
+  --background: #f1f3f7;
+  --foreground: #16233f;
+  --card: #ffffff;
+  --card-foreground: #16233f;
+  --popover: #ffffff;
+  --popover-foreground: #16233f;
+
+  --primary: #16233f;
+  --primary-foreground: #ffffff;
+  --secondary: #e4e8ef;
+  --secondary-foreground: #16233f;
+  --muted: #e8ebf1;
+  --muted-foreground: #586378;
+  --accent: #e8ebf1;
+  --accent-foreground: #16233f;
+
+  --brand: #f2b705;
+  --brand-strong: #d99e00;
+  --brand-foreground: #16233f;
+  --brand-soft: #fdf2cc;
+  --ink: #16233f;
+  --ink-foreground: #ffffff;
+
+  --teal: #0b7d74;
+  --teal-soft: #dbf1ee;
+  --success: #1b7f46;
+  --success-soft: #dff3e7;
+  --chili: #d2461b;
+  --chili-soft: #fde5da;
+  --destructive: #c2342b;
+  --destructive-soft: #fbe3e1;
+
+  --border: #d9dee7;
+  --input: #c9d0dc;
+  --ring: #d99e00;
+
+  --ticket-edge: #d9dee7;
+  --ticket-shadow: rgb(22 35 63 / 0.35);
+  --ticket-shadow-soft: rgb(22 35 63 / 0.12);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #0b1322;
+  --foreground: #e7ebf3;
+  --card: #131e34;
+  --card-foreground: #e7ebf3;
+  --popover: #17233c;
+  --popover-foreground: #e7ebf3;
+
+  --primary: #f2b705;
+  --primary-foreground: #16233f;
+  --secondary: #1d2a45;
+  --secondary-foreground: #e7ebf3;
+  --muted: #1a2640;
+  --muted-foreground: #98a3b8;
+  --accent: #1d2a45;
+  --accent-foreground: #e7ebf3;
+
+  --brand: #f2b705;
+  --brand-strong: #ffc829;
+  --brand-foreground: #16233f;
+  --brand-soft: #352c0d;
+  --ink: #e7ebf3;
+  --ink-foreground: #0b1322;
+
+  --teal: #3cc4b6;
+  --teal-soft: #0f2f2e;
+  --success: #4fcf86;
+  --success-soft: #12301f;
+  --chili: #ff7d4f;
+  --chili-soft: #3a1c10;
+  --destructive: #f26a5f;
+  --destructive-soft: #3a1714;
+
+  --border: #24324f;
+  --input: #2e3d5d;
+  --ring: #f2b705;
+
+  --ticket-edge: #24324f;
+  --ticket-shadow: rgb(0 0 0 / 0.7);
+  --ticket-shadow-soft: rgb(0 0 0 / 0.45);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
   html {
     @apply font-sans;
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "tnum" 0;
+  }
+  ::selection {
+    background: var(--brand);
+    color: var(--brand-foreground);
+  }
+}
+
+@layer components {
+  /*
+   * A ticket: semicircle notches cut into both sides at --notch (from the top).
+   * Pair with .perforation on the line between the two halves.
+   */
+  .ticket {
+    --notch: 50%;
+    --notch-size: 11px;
+    mask:
+      radial-gradient(circle var(--notch-size) at 0 var(--notch), #0000 98%, #000) left / 51% 100% no-repeat,
+      radial-gradient(circle var(--notch-size) at 100% var(--notch), #0000 98%, #000) right / 51% 100% no-repeat;
+  }
+
+  /* A ticket in two stacked halves: notches sit exactly on the tear line. */
+  .ticket-top {
+    --notch-size: 11px;
+    mask:
+      radial-gradient(circle var(--notch-size) at 0 100%, #0000 98%, #000) left / 51% 100% no-repeat,
+      radial-gradient(circle var(--notch-size) at 100% 100%, #0000 98%, #000) right / 51% 100% no-repeat;
+  }
+  .ticket-bottom {
+    --notch-size: 11px;
+    mask:
+      radial-gradient(circle var(--notch-size) at 0 0, #0000 98%, #000) left / 51% 100% no-repeat,
+      radial-gradient(circle var(--notch-size) at 100% 0, #0000 98%, #000) right / 51% 100% no-repeat;
+  }
+
+  /* A horizontal ticket: the stub (--stub wide, at the inline start) tears off. */
+  .ticket-h {
+    --stub: 5.5rem;
+    --stub-at: var(--stub);
+    mask:
+      radial-gradient(circle 8px at var(--stub-at) 0, #0000 98%, #000) top / 100% 51% no-repeat,
+      radial-gradient(circle 8px at var(--stub-at) 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
+  }
+  [dir="rtl"] .ticket-h {
+    --stub-at: calc(100% - var(--stub));
+  }
+
+  /* Masks clip box-shadows, so tickets cast theirs from a wrapper. */
+  .ticket-shadow {
+    filter: drop-shadow(0 1px 0 var(--ticket-edge)) drop-shadow(0 10px 14px var(--ticket-shadow-soft));
+  }
+
+  .perforation {
+    background-image: linear-gradient(to right, currentColor 50%, transparent 0);
+    background-size: 10px 2px;
+    background-repeat: repeat-x;
+    height: 2px;
+    opacity: 0.28;
+  }
+
+  /* The ticket prints out of the slot once, on first paint. */
+  .ticket-print {
+    animation: ticket-print 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .live-dot {
+    position: relative;
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: currentColor;
+  }
+  .live-dot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: currentColor;
+    animation: live-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+}
+
+@keyframes ticket-print {
+  from {
+    transform: translateY(-14px);
+    clip-path: inset(0 0 100% 0);
+    opacity: 0.4;
+  }
+  to {
+    transform: translateY(0);
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
+
+@keyframes live-ping {
+  75%,
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticket-print,
+  .live-dot::after {
+    animation: none;
   }
 }

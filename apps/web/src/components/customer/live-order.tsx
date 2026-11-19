@@ -1,6 +1,7 @@
 "use client";
 
 import { isLate, type PublicOrder } from "@dawry/shared";
+import { BookmarkCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useLive, useNow } from "@/lib/live";
 import { OrderStatusView } from "./order-status-view";
@@ -24,14 +25,28 @@ export function LiveOrder({
   const now = useNow(1000, renderedAt);
   // Lateness follows the ticking clock, not just the last fetch.
   const order = { ...data, late: isLate({ status: data.status, etaAt: new Date(data.etaAt) }, now) };
+  const finished = order.status === "delivered" || order.status === "cancelled";
 
   return (
-    <div className="flex flex-col gap-3">
-      <OrderStatusView order={order} now={now} />
-      <p className="text-muted-foreground text-center text-xs">
-        {t("live")}
-        {signedIn ? ` · ${t("saved")}` : ""}
-      </p>
-    </div>
+    <OrderStatusView
+      order={order}
+      now={now}
+      footer={
+        <span className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+          {finished ? null : (
+            <span className="text-success inline-flex items-center gap-1.5 font-medium">
+              <span className="live-dot" aria-hidden />
+              {t("live")}
+            </span>
+          )}
+          {signedIn ? (
+            <span className="inline-flex items-center gap-1">
+              <BookmarkCheck aria-hidden className="size-3.5" />
+              {t("saved")}
+            </span>
+          ) : null}
+        </span>
+      }
+    />
   );
 }

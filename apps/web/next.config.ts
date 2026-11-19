@@ -15,6 +15,8 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: resolve(import.meta.dirname, "../.."),
   transpilePackages: ["@dawry/shared"],
   poweredByHeader: false,
+  // The dev badge sits on top of RTL content; build/runtime errors still show.
+  devIndicators: false,
   // One origin for the browser: /api/* is proxied to the API (cookies stay first-party).
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${apiUrl}/api/:path*` }];

@@ -67,7 +67,7 @@ describe("NewOrderForm", () => {
     await user.type(screen.getByLabelText("Invoice number"), "7");
     await user.type(screen.getAllByLabelText("Item name")[0]!, "Burger");
     await user.type(screen.getByLabelText(/Table/), "1");
-    await user.selectOptions(screen.getByLabelText("ETA"), "clock");
+    await user.click(screen.getByRole("radio", { name: "Clock time" }));
     await user.type(screen.getByLabelText("Time"), "21:15");
     await user.click(screen.getByRole("button", { name: "Add order" }));
 

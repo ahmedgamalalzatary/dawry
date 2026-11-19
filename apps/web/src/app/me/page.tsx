@@ -1,4 +1,5 @@
 import type { PublicRestaurant, SavedOrder } from "@dawry/shared";
+import { Star } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { MyOrders } from "@/components/customer/my-orders";
 import { RestaurantList } from "@/components/customer/restaurant-search";
@@ -13,15 +14,20 @@ export default async function MePage() {
   ]);
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-4 py-8">
-      <h1 className="text-2xl font-bold">{t("title")}</h1>
+    <main className="mx-auto flex w-full max-w-2xl flex-col gap-10 px-4 pt-8 pb-16">
+      <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
       <MyOrders initial={orders ?? []} renderedAt={new Date().toISOString()} />
-      <section className="flex flex-col gap-2">
-        <h2 className="font-semibold">{t("favorites")}</h2>
+      <section className="flex flex-col gap-3">
+        <h2 className="flex items-center gap-2 text-lg font-semibold">
+          <Star aria-hidden className="fill-brand text-brand-strong size-5" />
+          {t("favorites")}
+        </h2>
         {favorites && favorites.length > 0 ? (
           <RestaurantList restaurants={favorites} />
         ) : (
-          <p className="text-muted-foreground text-sm">{t("noFavorites")}</p>
+          <p className="text-muted-foreground rounded-2xl border border-dashed px-4 py-6 text-center text-sm">
+            {t("noFavorites")}
+          </p>
         )}
       </section>
     </main>
