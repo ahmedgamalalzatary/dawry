@@ -3,7 +3,14 @@
 #   docker compose up -d --build
 # Every up/build runs the "migrate" service on the new api image first; the api
 # only starts once migrations have finished successfully.
+# The server is shared with other projects, so every service has a memory cap.
 name: dawry
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
 
 x-api-env: &api-env
   DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
@@ -23,6 +30,9 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    command:
+      - --innodb-buffer-pool-size=256M
+      - --max-connections=50
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
@@ -30,6 +40,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 30s
+    mem_limit: 768m
+    logging: *logging
 
   migrate:
     image: dawry-api
@@ -42,16 +55,21 @@ services:
       mysql:
         condition: service_healthy
     environment: *api-env
+    mem_limit: 384m
+    logging: *logging
 
   api:
     image: dawry-api
     restart: unless-stopped
+    init: true
     depends_on:
       migrate:
         condition: service_completed_successfully
     environment: *api-env
     ports:
-      - "127.0.0.1:4000:4000"
+      - "127.0.0.1:${API_HOST_PORT:-4000}:4000"
+    mem_limit: 384m
+    logging: *logging
 
   web:
     build:
@@ -62,10 +80,13 @@ services:
     environment:
       APP_TIME_ZONE: ${APP_TIME_ZONE:-Africa/Cairo}
     restart: unless-stopped
+    init: true
     depends_on:
       - api
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:${WEB_HOST_PORT:-3000}:3000"
+    mem_limit: 512m
+    logging: *logging
 
 volumes:
   mysql-data:
