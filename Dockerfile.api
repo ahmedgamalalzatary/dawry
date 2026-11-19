@@ -1,0 +1,23 @@
+# Build from the repo root:  docker build -f Dockerfile.api .
+FROM node:24-alpine AS base
+RUN npm install -g pnpm@12.4.1
+WORKDIR /repo
+
+FROM base AS build
+COPY . .
+RUN pnpm install --frozen-lockfile
+RUN pnpm turbo run build --filter=@dawry/api
+# Self-contained folder: dist, drizzle migrations and production node_modules only.
+RUN pnpm --filter @dawry/api deploy --prod --legacy /out
+
+FROM node:24-alpine AS runtime
+ENV NODE_ENV=production
+WORKDIR /app
+COPY --from=build /out/package.json ./package.json
+COPY --from=build /out/node_modules ./node_modules
+COPY --from=build /out/dist ./dist
+COPY --from=build /out/drizzle ./drizzle
+USER node
+EXPOSE 4000
+# Migrations run in the compose "migrate" service (same image) before this starts.
+CMD ["node", "dist/index.js"]

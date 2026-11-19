@@ -9,6 +9,9 @@ loadEnvConfig(resolve(import.meta.dirname, "../.."));
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
+  // Self-contained server for the Docker image; trace files from the monorepo root.
+  output: "standalone",
+  outputFileTracingRoot: resolve(import.meta.dirname, "../.."),
   transpilePackages: ["@dawry/shared"],
   turbopack: {
     rules: {

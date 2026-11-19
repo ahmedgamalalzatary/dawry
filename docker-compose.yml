@@ -1,0 +1,67 @@
+# Production stack for the Dawry server. Reads the root .env (see .env.example,
+# "production" section). nginx on the host proxies to the 127.0.0.1 ports.
+#   docker compose up -d --build
+# Every up/build runs the "migrate" service on the new api image first; the api
+# only starts once migrations have finished successfully.
+name: dawry
+
+x-api-env: &api-env
+  DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+  BETTER_AUTH_URL: ${BETTER_AUTH_URL}
+  WEB_ORIGIN: ${WEB_ORIGIN}
+  API_PORT: 4000
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    image: dawry-api
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    command: ["node", "dist/migrate.js"]
+    restart: "no"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment: *api-env
+
+  api:
+    image: dawry-api
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment: *api-env
+    ports:
+      - "127.0.0.1:4000:4000"
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "127.0.0.1:3000:3000"
+
+volumes:
+  mysql-data:
