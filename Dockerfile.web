@@ -11,6 +11,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 COPY . .
 RUN pnpm install --frozen-lockfile
 RUN pnpm turbo run build --filter=@dawry/web
+# public/ is optional (git drops empty folders); make sure the COPY below has a source.
+RUN mkdir -p apps/web/public
 
 FROM node:24-alpine AS runtime
 ARG API_INTERNAL_URL=http://api:4000
