@@ -142,13 +142,14 @@ export async function updateStatus(
     throw conflict(`Cannot change an order from ${row.status} to ${status}`);
   }
   const now = clock.now();
-  await repo.updateOrder(db, row.id, {
+  const updated = await repo.updateOrder(db, row.id, row.status, {
     status,
     updatedAt: now,
     ...(status === "out_for_delivery" ? { outAt: now } : {}),
     ...(status === "delivered" ? { deliveredAt: now } : {}),
     ...(status === "cancelled" ? { cancelledAt: now } : {}),
   });
+  if (!updated) throw conflict("Order status changed. Refresh and try again.");
   return getOrder(db, restaurantId, orderId, clock);
 }
 
@@ -162,11 +163,12 @@ export async function updateEta(
   const row = await requireOrder(db, restaurantId, orderId);
   if (row.status !== "preparing") throw conflict("The ETA can only change while preparing");
   const now = clock.now();
-  await repo.updateOrder(db, row.id, {
+  const updated = await repo.updateOrder(db, row.id, row.status, {
     etaMode: eta.mode,
     etaAt: computeEtaAt(eta, now, clock.timeZone),
     updatedAt: now,
   });
+  if (!updated) throw conflict("The ETA can only change while preparing");
   return getOrder(db, restaurantId, orderId, clock);
 }
 
@@ -182,7 +184,27 @@ export async function findPublicOrder(
   const matches = queue.filter((o) => o.invoiceNumber === invoiceNumber);
   const row = matches.find((o) => o.businessDay === today) ?? matches[0];
   if (!row) return null;
+  return { id: row.id, order: await publicOrderView(db, restaurant, row, queue, clock) };
+}
 
+export async function getSavedOrderView(
+  db: Db,
+  restaurant: PublicRestaurant & { id: string },
+  orderId: string,
+  clock: Clock,
+): Promise<PublicOrder> {
+  const queue = await queueOf(db, restaurant.id, clock);
+  const row = queue.find((item) => item.id === orderId) ?? await requireOrder(db, restaurant.id, orderId);
+  return publicOrderView(db, restaurant, row, queue, clock);
+}
+
+async function publicOrderView(
+  db: Db,
+  restaurant: PublicRestaurant,
+  row: repo.OrderRow,
+  queue: repo.OrderRow[],
+  clock: Clock,
+) {
   const { items, fields } = await repo.itemsAndFields(db, [row.id]);
-  return { id: row.id, order: toPublicOrder(restaurant, row, items, fields, queue, clock.now()) };
+  return toPublicOrder(restaurant, row, items, fields, queue, clock.now());
 }

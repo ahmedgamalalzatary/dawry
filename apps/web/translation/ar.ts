@@ -30,6 +30,7 @@ const ar = {
     dashboard: "لوحة المطعم",
     admin: "لوحة الإدارة",
     signOut: "تسجيل الخروج",
+    signOutFailed: "تعذّر تسجيل الخروج. حاول مرة أخرى.",
     switchTo: "English",
     theme: "تبديل المظهر الفاتح والداكن",
   },

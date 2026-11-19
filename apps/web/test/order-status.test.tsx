@@ -25,6 +25,11 @@ const show = (order: Partial<PublicOrder>) =>
   renderWithIntl(<OrderStatusView order={{ ...base, ...order }} now={now} />);
 
 describe("OrderStatusView", () => {
+  it("displays clock ETAs in the configured application time zone", () => {
+    renderWithIntl(<OrderStatusView order={{ ...base, etaMode: "clock", etaAt: "2026-11-19T18:45:00Z" }} now={now} />, "UTC");
+    expect(screen.getByText("18:45", { exact: true })).toBeInTheDocument();
+  });
+
   it("shows the restaurant, invoice, queue and countdown while preparing", () => {
     show({});
     expect(screen.getByRole("heading", { name: "Invoice #42" })).toBeInTheDocument();

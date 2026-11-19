@@ -86,17 +86,26 @@ export const createStaffSchema = z.object({
   password: passwordSchema,
 });
 
-export const menuItemSchema = z.object({
+const menuItemFields = z.object({
   name: requiredText(),
-  active: z.boolean().default(true),
+  active: z.boolean(),
 });
 
-export const customFieldSchema = z.object({
+const customFieldFields = z.object({
   label: requiredText(),
-  required: z.boolean().default(false),
-  public: z.boolean().default(false),
-  active: z.boolean().default(true),
+  required: z.boolean(),
+  public: z.boolean(),
+  active: z.boolean(),
 });
+
+export const menuItemSchema = menuItemFields.extend({ active: menuItemFields.shape.active.default(true) });
+export const customFieldSchema = customFieldFields.extend({
+  required: customFieldFields.shape.required.default(false),
+  public: customFieldFields.shape.public.default(false),
+  active: customFieldFields.shape.active.default(true),
+});
+export const updateMenuItemSchema = menuItemFields.partial();
+export const updateCustomFieldSchema = customFieldFields.partial();
 
 export const restaurantSettingsSchema = z.object({
   name: requiredText(),

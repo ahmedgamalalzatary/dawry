@@ -58,6 +58,27 @@ describe("GET /api/me", () => {
 });
 
 describe("saved orders", () => {
+  it("opens the exact saved order after its invoice number is reused", async () => {
+    const a = await seedRestaurant(t, admin);
+    const old = await a.owner.post("/api/restaurant/orders", order("42"));
+    const c = client(t.app);
+    await signUp(c);
+    const lookup = `/api/public/r/${a.slug}/orders/42`;
+    await c.get(lookup);
+    await a.owner.patch(`/api/restaurant/orders/${old.body.id}/status`, { status: "cancelled" });
+    clock.set("2026-11-20T18:00:00Z");
+    await a.owner.post("/api/restaurant/orders", order("42"));
+    await c.get(lookup);
+
+    const saved = `/api/me/orders/${a.slug}`;
+    const older = await c.get(`${saved}/2026-11-19/42`);
+    expect(older.status).toBe(200);
+    expect(older.body).toMatchObject({ businessDay: "2026-11-19", status: "cancelled" });
+    expect((await c.get(`${saved}/2026-11-20/42`)).body).toMatchObject({ businessDay: "2026-11-20", status: "preparing" });
+    expect((await client(t.app).get(`${saved}/2026-11-19/42`)).status).toBe(401);
+    expect((await a.owner.get(`${saved}/2026-11-19/42`)).status).toBe(404);
+  });
+
   it("lists active orders first and hides suspended restaurants", async () => {
     const a = await seedRestaurant(t, admin, "A");
     const b = await seedRestaurant(t, admin, "B");

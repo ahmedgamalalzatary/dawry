@@ -4,6 +4,7 @@ import { Languages, LogOut, Moon, Sun } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { setLocale } from "@/i18n/actions";
 import { api } from "@/lib/api/client";
@@ -59,7 +60,12 @@ export function SignOutButton() {
       className="text-muted-foreground hover:text-foreground"
       onClick={() =>
         start(async () => {
-          await api("/api/auth/sign-out", { body: {} }).catch(() => undefined);
+          try {
+            await api("/api/auth/sign-out", { body: {} });
+          } catch {
+            toast.error(t("signOutFailed"));
+            return;
+          }
           router.replace("/");
           router.refresh();
         })

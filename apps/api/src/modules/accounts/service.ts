@@ -32,9 +32,7 @@ export async function createAccount(auth: Auth, db: Db, input: NewAccount): Prom
 /** Replace a user's password and sign them out everywhere. False if no such user. */
 export async function setPassword(auth: Auth, db: Db, userId: string, password: string) {
   const ctx = await auth.$context;
-  const updated = await repo.updatePasswordHash(db, userId, await ctx.password.hash(password));
-  if (updated) await repo.deleteSessions(db, userId);
-  return updated;
+  return repo.resetCredentials(db, userId, await ctx.password.hash(password));
 }
 
 export const deleteUser = repo.deleteUser;

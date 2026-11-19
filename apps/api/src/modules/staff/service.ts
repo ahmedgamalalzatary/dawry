@@ -18,7 +18,12 @@ export async function createStaff(
   input: z.output<typeof createStaffSchema>,
 ) {
   const userId = await createAccount(auth, db, input);
-  await repo.addStaffMember(db, restaurantId, userId);
+  try {
+    await repo.addStaffMember(db, restaurantId, userId);
+  } catch (error) {
+    await deleteUser(db, userId);
+    throw error;
+  }
   return { id: userId, name: input.name, username: input.username };
 }
 

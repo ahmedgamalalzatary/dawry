@@ -27,7 +27,7 @@ export async function updateMenuItem(
 ) {
   const existing = await repo.findMenuItem(db, restaurantId, id);
   if (!existing) throw notFound("Menu item not found");
-  await repo.updateMenuItem(db, id, input);
+  if (Object.keys(input).length > 0) await repo.updateMenuItem(db, id, input);
   return toMenuItem({ ...existing, ...input });
 }
 
@@ -49,6 +49,6 @@ export async function updateField(
 ) {
   const existing = await repo.findField(db, restaurantId, id);
   if (!existing) throw notFound("Custom field not found");
-  await repo.updateField(db, id, input);
+  if (Object.keys(input).length > 0) await repo.updateField(db, id, input);
   return toField({ ...existing, ...input });
 }

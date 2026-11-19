@@ -11,6 +11,7 @@ import type { Deps } from "../../deps";
 import { notFound } from "../../http/errors";
 import type { SessionUser } from "../../http/guards";
 import { createAccount, findMembership } from "../accounts/service";
+import { getSavedOrderView } from "../orders/service";
 import { findRestaurant } from "../public/service";
 import * as repo from "./repo";
 
@@ -52,6 +53,14 @@ export async function savedOrders(deps: Deps, userId: string): Promise<SavedOrde
 }
 
 export const activeSavedRestaurantIds = repo.activeSavedRestaurantIds;
+
+export async function savedOrder(deps: Deps, userId: string, slug: string, day: string, invoiceNumber: string) {
+  const { db } = deps;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) throw notFound("Saved order not found");
+  const orderId = await repo.findSavedOrderId(db, userId, slug, day, invoiceNumber);
+  if (!orderId) throw notFound("Saved order not found");
+  return getSavedOrderView(db, await requireRestaurant(db, slug), orderId, deps);
+}
 
 export async function forgetOrder(
   db: Db,

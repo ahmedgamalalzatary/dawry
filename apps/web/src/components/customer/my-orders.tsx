@@ -3,7 +3,7 @@
 import { isLate, type OrderStatus, type SavedOrder } from "@dawry/shared";
 import { Clock, Ticket, TriangleAlert } from "lucide-react";
 import Link from "next/link";
-import { useLocale, useTranslations } from "next-intl";
+import { useLocale, useTimeZone, useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { formatTime } from "@/lib/format";
@@ -86,13 +86,14 @@ function OrderGroup({
 function OrderStub({ order, now }: { order: SavedOrder; now: Date }) {
   const to = useTranslations("order");
   const locale = useLocale();
+  const timeZone = useTimeZone();
   const late = isLate({ status: order.status, etaAt: new Date(order.etaAt) }, now);
   const finished = !ACTIVE.has(order.status);
 
   return (
     <li className="ticket-shadow">
       <Link
-        href={orderPath(order.slug, order.invoiceNumber)}
+        href={orderPath(order.slug, order.invoiceNumber, order.businessDay)}
         className={cn(
           "ticket-h group focus-visible:ring-ring/60 flex min-h-22 rounded-2xl outline-none focus-visible:ring-3",
           finished && "opacity-80 hover:opacity-100",
@@ -124,7 +125,7 @@ function OrderStub({ order, now }: { order: SavedOrder; now: Date }) {
                 ) : (
                   <Clock aria-hidden className="size-3.5" />
                 )}
-                {late ? to("late") : to("eta.at", { time: formatTime(order.etaAt, locale) })}
+                {late ? to("late") : to("eta.at", { time: formatTime(order.etaAt, locale, timeZone) })}
               </span>
             ) : (
               <span className="text-muted-foreground text-sm tabular-nums" dir="ltr">

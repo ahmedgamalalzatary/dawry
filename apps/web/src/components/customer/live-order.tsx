@@ -8,17 +8,19 @@ import { OrderStatusView } from "./order-status-view";
 
 export function LiveOrder({
   initial,
+  orderUrl,
   signedIn,
   renderedAt,
 }: {
   initial: PublicOrder;
+  orderUrl: string;
   signedIn: boolean;
   renderedAt: string;
 }) {
   const t = useTranslations("order");
   const slug = initial.restaurant.slug;
   const { data } = useLive(
-    `/api/public/r/${encodeURIComponent(slug)}/orders/${encodeURIComponent(initial.invoiceNumber)}`,
+    orderUrl,
     initial,
     `/api/public/r/${encodeURIComponent(slug)}/events`,
   );

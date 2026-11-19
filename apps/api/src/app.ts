@@ -1,7 +1,9 @@
+import { isIP } from "node:net";
 import { toNodeHandler } from "better-auth/node";
 import express from "express";
 import { rateLimit } from "express-rate-limit";
 import helmet from "helmet";
+import { AUTH_CLIENT_IP_HEADER } from "./auth";
 import type { Deps } from "./deps";
 import { errorHandler, HttpError, notFoundHandler } from "./http/errors";
 import { loadSession, requireRestaurant } from "./http/guards";
@@ -49,6 +51,15 @@ export function createApp(deps: Deps) {
   // CSRF: every state-changing /api request (auth included) must come from the web origin.
   // Better Auth alone only checks the origin when a cookie is present.
   app.use("/api", requireTrustedOrigin(deps.webOrigin));
+
+  app.use("/api", (req, _res, next) => {
+    // Use Express's trusted-proxy result for Better Auth's single-address parser.
+    // Always overwrite the private header at the API boundary.
+    delete req.headers[AUTH_CLIENT_IP_HEADER];
+    const ip = req.ip && isIP(req.ip) ? req.ip : req.socket.remoteAddress;
+    if (ip) req.headers[AUTH_CLIENT_IP_HEADER] = ip;
+    next();
+  });
 
   // Better Auth reads the raw body itself, so it goes before express.json().
   app.all("/api/auth/{*splat}", toNodeHandler(deps.auth));

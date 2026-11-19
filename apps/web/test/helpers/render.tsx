@@ -4,9 +4,9 @@ import type { ReactElement } from "react";
 import en from "../../translation/en";
 
 /** Render inside next-intl with the English messages. */
-export function renderWithIntl(ui: ReactElement) {
+export function renderWithIntl(ui: ReactElement, timeZone = "Africa/Cairo") {
   return render(
-    <NextIntlClientProvider locale="en" messages={en} timeZone="Africa/Cairo">
+    <NextIntlClientProvider locale="en" messages={en} timeZone={timeZone}>
       {ui}
     </NextIntlClientProvider>,
   );

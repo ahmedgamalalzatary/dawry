@@ -1,7 +1,9 @@
 import request from "supertest";
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { session } from "../src/db/schema";
+import * as accounts from "../src/modules/accounts/repo";
 import { makeApp, WEB_ORIGIN } from "./helpers/app";
-import { closeTestDb, resetDb } from "./helpers/db";
+import { closeTestDb, resetDb, testDb } from "./helpers/db";
 
 const { app, auth } = makeApp();
 
@@ -23,12 +25,32 @@ beforeEach(resetDb);
 afterAll(closeTestDb);
 
 describe("POST /api/auth/sign-in/username", () => {
+  it("uses the client address resolved by Express across trusted proxy hops", async () => {
+    await createAccount("cashier1", "correct-horse-1");
+    const res = await signIn("cashier1", "correct-horse-1")
+      .set("X-Forwarded-For", "192.0.2.10, 172.18.0.5");
+    expect(res.status).toBe(200);
+    expect(await testDb.select({ ip: session.ipAddress }).from(session)).toEqual([{ ip: "192.0.2.10" }]);
+  });
+
   it("signs a staff member in with username + password", async () => {
     await createAccount("cashier1", "correct-horse-1");
 
     const res = await signIn("cashier1", "correct-horse-1");
 
     expect(res.status).toBe(200);
+  });
+
+  it("withholds the session cookie when the credential cannot be confirmed", async () => {
+    await createAccount("cashier1", "correct-horse-1");
+    const check = vi.spyOn(accounts, "checkSessionCredential").mockResolvedValueOnce(false);
+    try {
+      const res = await signIn("cashier1", "correct-horse-1");
+      expect(res.status).toBe(401);
+      expect(res.headers["set-cookie"]).toBeUndefined();
+    } finally {
+      check.mockRestore();
+    }
   });
 
   it("sets an HttpOnly, SameSite=Lax session cookie", async () => {

@@ -42,15 +42,21 @@ export function meRoutes(deps: Deps) {
     res.json(await service.savedOrders(deps, requireUser(res).id));
   });
 
+  router.get("/orders/:slug/:day/:invoice", async (req, res) => {
+    const { slug, day, invoice } = req.params;
+    const order = await service.savedOrder(deps, requireUser(res).id, String(slug), String(day), String(invoice));
+    res.set("Cache-Control", "no-store").json(order);
+  });
+
   router.delete("/orders/:slug/:day/:invoice", async (req, res) => {
     const { slug, day, invoice } = req.params;
     await service.forgetOrder(db, requireUser(res).id, String(slug), String(day), String(invoice));
     res.status(204).end();
   });
 
-  router.get("/events", (req, res) => {
+  router.get("/events", (_req, res) => {
     const userId = requireUser(res).id;
-    openStream(req, res, deps.bus, async (restaurantId) =>
+    openStream(res, deps.bus, async (restaurantId) =>
       (await service.activeSavedRestaurantIds(db, userId)).has(restaurantId),
     );
   });

@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import type { Request, Response } from "express";
+import type { Response } from "express";
 
 /**
  * In-process "something changed" bus, keyed by restaurant id.
@@ -29,11 +29,11 @@ const HEARTBEAT_MS = 25_000;
  * this client cares; it receives `event: change`.
  */
 export function openStream(
-  req: Request,
   res: Response,
   bus: EventBus,
   shouldNotify: (restaurantId: string) => boolean | Promise<boolean>,
 ) {
+  if (res.destroyed || res.writableEnded) return;
   res.status(200).set({
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache, no-transform",
@@ -46,14 +46,16 @@ export function openStream(
 
   const unsubscribe = bus.subscribe(async (restaurantId) => {
     try {
-      if (await shouldNotify(restaurantId)) res.write("event: change\ndata: {}\n\n");
+      if (await shouldNotify(restaurantId) && !res.destroyed && !res.writableEnded) {
+        res.write("event: change\ndata: {}\n\n");
+      }
     } catch {
       // A failed filter only skips this notification.
     }
   });
   const heartbeat = setInterval(() => res.write(": ping\n\n"), HEARTBEAT_MS);
 
-  req.on("close", () => {
+  res.once("close", () => {
     clearInterval(heartbeat);
     unsubscribe();
   });

@@ -59,6 +59,8 @@ services:
       dockerfile: Dockerfile.web
       args:
         API_INTERNAL_URL: http://api:4000
+    environment:
+      APP_TIME_ZONE: ${APP_TIME_ZONE:-Africa/Cairo}
     restart: unless-stopped
     depends_on:
       - api

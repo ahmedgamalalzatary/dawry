@@ -1,6 +1,9 @@
-import { get, type IncomingMessage } from "node:http";
+import { get, IncomingMessage, ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { Socket } from "node:net";
+import express, { type Response } from "express";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { openStream as initializeStream } from "../src/http/events";
 import { makeApp, order, seedAdmin, seedRestaurant } from "./helpers/app";
 import { closeTestDb, resetDb } from "./helpers/db";
 
@@ -46,6 +49,21 @@ function openStream(path: string) {
 }
 
 describe("GET /api/public/r/:slug/events", () => {
+  it("does not start a heartbeat for an already closed response", () => {
+    const socket = new Socket();
+    const req = new IncomingMessage(socket);
+    const res = Object.assign(new ServerResponse(req), { status: express.response.status, set: express.response.set });
+    res.destroy();
+    vi.useFakeTimers();
+    try {
+      initializeStream(res as Response, t.bus, () => true);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+      socket.destroy();
+    }
+  });
+
   it("streams a change event when one of the restaurant's orders changes", async () => {
     const admin = await seedAdmin(t);
     const r = await seedRestaurant(t, admin);

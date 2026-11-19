@@ -2,7 +2,7 @@
 
 import { canTransition, type EtaMode, type OrderStatus, type StaffOrder } from "@dawry/shared";
 import { Bike, Clock, PackageCheck, QrCode, Timer, UserRound, UsersRound, X } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+import { useLocale, useTimeZone, useTranslations } from "next-intl";
 import QRCode from "qrcode";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
@@ -46,6 +46,7 @@ export function OrderCard({
   const to = useTranslations("order");
   const tc = useTranslations("common");
   const locale = useLocale();
+  const timeZone = useTimeZone();
   const [editing, setEditing] = useState(false);
   const [mode, setMode] = useState<EtaMode>(order.etaMode);
   const [qr, setQr] = useState<string | null>(null);
@@ -143,7 +144,7 @@ export function OrderCard({
             >
               <Clock aria-hidden className="size-4" />
               {order.late || eta.kind === "clock"
-                ? to("eta.at", { time: formatTime(order.etaAt, locale) })
+                ? to("eta.at", { time: formatTime(order.etaAt, locale, timeZone) })
                 : eta.kind === "countdown"
                   ? to("eta.countdown", { remaining: eta.remaining })
                   : to("eta.minutes", { minutes: eta.minutes })}

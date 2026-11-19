@@ -91,6 +91,7 @@ export async function insertOrder(
   });
 }
 
-export async function updateOrder(db: Db, orderId: string, values: Partial<NewOrder>) {
-  await db.update(orders).set(values).where(eq(orders.id, orderId));
+export async function updateOrder(db: Db, orderId: string, status: OrderRow["status"], values: Partial<NewOrder>) {
+  const [result] = await db.update(orders).set(values).where(and(eq(orders.id, orderId), eq(orders.status, status)));
+  return result.affectedRows > 0;
 }

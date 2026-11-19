@@ -1,4 +1,4 @@
-import { customFieldSchema, menuItemSchema } from "@dawry/shared";
+import { customFieldSchema, menuItemSchema, updateCustomFieldSchema, updateMenuItemSchema } from "@dawry/shared";
 import { Router } from "express";
 import type { Deps } from "../../deps";
 import { currentRestaurant, requireOwner } from "../../http/guards";
@@ -19,7 +19,7 @@ export function catalogRoutes({ db }: Deps) {
   });
 
   router.patch("/menu/:id", requireOwner, async (req, res) => {
-    const input = parse(menuItemSchema.partial(), req.body);
+    const input = parse(updateMenuItemSchema, req.body);
     res.json(await service.updateMenuItem(db, currentRestaurant(res).id, String(req.params.id), input));
   });
 
@@ -33,7 +33,7 @@ export function catalogRoutes({ db }: Deps) {
   });
 
   router.patch("/fields/:id", requireOwner, async (req, res) => {
-    const input = parse(customFieldSchema.partial(), req.body);
+    const input = parse(updateCustomFieldSchema, req.body);
     res.json(await service.updateField(db, currentRestaurant(res).id, String(req.params.id), input));
   });
 

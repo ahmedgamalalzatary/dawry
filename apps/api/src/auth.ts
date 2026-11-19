@@ -1,10 +1,14 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { admin } from "better-auth/plugins/admin";
 import { organization } from "better-auth/plugins/organization";
 import { username } from "better-auth/plugins/username";
 import type { Db } from "./db/client";
 import * as schema from "./db/schema";
+import { checkSessionCredential } from "./modules/accounts/repo";
+
+export const AUTH_CLIENT_IP_HEADER = "x-dawry-client-ip";
 
 export interface AuthOptions {
   secret: string;
@@ -45,6 +49,43 @@ export function createAuth(db: Db, options: AuthOptions) {
     advanced: {
       useSecureCookies: options.production,
       defaultCookieAttributes: { httpOnly: true, sameSite: "lax", path: "/" },
+      ipAddress: { ipAddressHeaders: [AUTH_CLIENT_IP_HEADER] },
+    },
+    hooks: {
+      before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== "/sign-in/username") return;
+
+        // Keep the hash verified by this request. Recheck after the session insert,
+        // before Better Auth returns a token, so a concurrent reset cannot be bypassed.
+        const { password, internalAdapter } = ctx.context;
+        let verifiedHash: string | undefined;
+        return {
+          context: {
+            context: {
+              password: {
+                ...password,
+                verify: async (input: Parameters<typeof password.verify>[0]) => {
+                  const valid = await password.verify(input);
+                  if (valid) verifiedHash = input.hash;
+                  return valid;
+                },
+              },
+              internalAdapter: {
+                ...internalAdapter,
+                createSession: async (...args: Parameters<typeof internalAdapter.createSession>) => {
+                  const hash = verifiedHash;
+                  if (!hash) throw new APIError("UNAUTHORIZED", { message: "Invalid username or password" });
+                  const session = await internalAdapter.createSession(...args);
+                  if (session && !(await checkSessionCredential(db, args[0], session.id, hash))) {
+                    throw new APIError("UNAUTHORIZED", { message: "Invalid username or password" });
+                  }
+                  return session;
+                },
+              },
+            },
+          },
+        };
+      }),
     },
     rateLimit: {
       enabled: options.rateLimit,

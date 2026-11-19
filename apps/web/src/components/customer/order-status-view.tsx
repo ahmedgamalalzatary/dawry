@@ -2,7 +2,7 @@
 
 import type { OrderStatus, PublicOrder } from "@dawry/shared";
 import { Bike, Check, ChefHat, PackageCheck, Phone, TriangleAlert, XCircle } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+import { useLocale, useTimeZone, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { etaDisplay, formatTime } from "@/lib/format";
@@ -155,6 +155,7 @@ function TicketFoot({
   locale: string;
 }) {
   const t = useTranslations("order");
+  const timeZone = useTimeZone();
 
   if (order.status !== "preparing") {
     const message =
@@ -169,7 +170,7 @@ function TicketFoot({
   // Late: a 0:00 countdown says nothing useful, show the expected time instead.
   const showClock = order.late || eta.kind === "clock";
   const sentence = showClock
-    ? t("eta.at", { time: formatTime(order.etaAt, locale) })
+    ? t("eta.at", { time: formatTime(order.etaAt, locale, timeZone) })
     : eta.kind === "countdown"
       ? t("eta.countdown", { remaining: eta.remaining })
       : t("eta.minutes", { minutes: eta.minutes });
@@ -185,7 +186,7 @@ function TicketFoot({
           {/* Countdowns read left-to-right; an Arabic clock time keeps its own order ("11:22 م"). */}
           <span className="text-4xl leading-tight font-bold tabular-nums" dir={showClock ? undefined : "ltr"}>
             {showClock
-              ? formatTime(order.etaAt, locale)
+              ? formatTime(order.etaAt, locale, timeZone)
               : eta.kind === "countdown"
                 ? eta.remaining
                 : eta.kind === "minutes"
@@ -195,7 +196,7 @@ function TicketFoot({
         </div>
         {eta.kind === "countdown" && !order.late ? (
           <span className="pb-1.5 text-sm font-medium opacity-75">
-            {t("eta.at", { time: formatTime(eta.clock, locale) })}
+            {t("eta.at", { time: formatTime(eta.clock, locale, timeZone) })}
           </span>
         ) : eta.kind === "minutes" && !order.late ? (
           <span className="pb-1.5 text-sm font-medium opacity-75">{t("minutesUnit")}</span>

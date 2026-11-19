@@ -21,10 +21,11 @@ type FieldRow = typeof orderFieldValue.$inferSelect;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function currentDays(clock: Clock) {
-  const now = clock.now();
+  const today = businessDay(clock.now(), clock.timeZone);
+  const midnightUtc = Date.parse(`${today}T00:00:00Z`);
   return {
-    today: businessDay(now, clock.timeZone),
-    yesterday: businessDay(new Date(now.getTime() - DAY_MS), clock.timeZone),
+    today,
+    yesterday: new Date(midnightUtc - DAY_MS).toISOString().slice(0, 10),
   };
 }
 

@@ -36,7 +36,7 @@ export function publicRoutes(deps: Deps) {
   router.get("/r/:slug/events", async (req, res) => {
     const restaurant = await service.findRestaurant(db, String(req.params.slug));
     if (!restaurant) throw notFound();
-    openStream(req, res, deps.bus, (changedId) => changedId === restaurant.id);
+    openStream(res, deps.bus, (changedId) => changedId === restaurant.id);
   });
 
   return router;

@@ -7,5 +7,5 @@ export function homeFor(me: Pick<Me, "kind">) {
   return "/me";
 }
 
-export const orderPath = (slug: string, invoice: string) =>
-  `/r/${encodeURIComponent(slug)}/${encodeURIComponent(invoice)}`;
+export const orderPath = (slug: string, invoice: string, day?: string) =>
+  `/r/${encodeURIComponent(slug)}/${encodeURIComponent(invoice)}${day ? `?day=${encodeURIComponent(day)}` : ""}`;

@@ -31,6 +31,7 @@ const en: Messages = {
     dashboard: "Restaurant panel",
     admin: "Admin panel",
     signOut: "Sign out",
+    signOutFailed: "Could not sign out. Please try again.",
     switchTo: "العربية",
     theme: "Switch light and dark theme",
   },

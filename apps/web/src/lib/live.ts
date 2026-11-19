@@ -1,18 +1,24 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type SetStateAction } from "react";
 import { api } from "./api/client";
 
 /**
- * Keep `initial` fresh: refetch `url` whenever the SSE stream at `eventsUrl`
- * says something changed, and every 30 s as a fallback.
+ * Refetch on SSE connect, reconnect and change, with polling as a fallback.
  */
 export function useLive<T>(url: string, initial: T, eventsUrl: string | null) {
-  const [data, setData] = useState(initial);
+  const [data, setSnapshot] = useState(initial);
+  const revision = useRef(0);
+  const setData = useCallback((value: SetStateAction<T>) => {
+    revision.current++;
+    setSnapshot(value);
+  }, []);
 
   const refresh = useCallback(async () => {
+    const started = ++revision.current;
     try {
-      setData(await api<T>(url));
+      const snapshot = await api<T>(url);
+      if (started === revision.current) setSnapshot(snapshot);
     } catch {
       // Keep showing the last good data; the next event or tick retries.
     }
@@ -21,6 +27,7 @@ export function useLive<T>(url: string, initial: T, eventsUrl: string | null) {
   useEffect(() => {
     if (!eventsUrl) return;
     const source = new EventSource(eventsUrl);
+    source.addEventListener("ready", refresh);
     source.addEventListener("change", refresh);
     return () => source.close();
   }, [eventsUrl, refresh]);

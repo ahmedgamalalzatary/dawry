@@ -43,9 +43,9 @@ export function orderRoutes(deps: Deps) {
     res.json(updated);
   });
 
-  router.get("/events", (req, res) => {
+  router.get("/events", (_req, res) => {
     const restaurantId = currentRestaurant(res).id;
-    openStream(req, res, bus, (changedId) => changedId === restaurantId);
+    openStream(res, bus, (changedId) => changedId === restaurantId);
   });
 
   return router;

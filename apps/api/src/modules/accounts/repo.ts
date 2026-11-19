@@ -11,17 +11,28 @@ export async function usernameExists(db: Db, username: string) {
   return Boolean(row);
 }
 
-/** Returns false when the user has no password account. */
-export async function updatePasswordHash(db: Db, userId: string, hash: string) {
-  const [result] = await db
-    .update(account)
-    .set({ password: hash })
-    .where(and(eq(account.userId, userId), eq(account.providerId, "credential")));
-  return result.affectedRows > 0;
+const credentialsFor = (userId: string) =>
+  and(eq(account.userId, userId), eq(account.providerId, "credential"));
+
+/** Replace the credential and revoke sessions atomically. */
+export function resetCredentials(db: Db, userId: string, hash: string) {
+  return db.transaction(async (tx) => {
+    const [result] = await tx.update(account).set({ password: hash }).where(credentialsFor(userId));
+    if (result.affectedRows === 0) return false;
+    await tx.delete(session).where(eq(session.userId, userId));
+    return true;
+  });
 }
 
-export async function deleteSessions(db: Db, userId: string) {
-  await db.delete(session).where(eq(session.userId, userId));
+/** Wait for any reset in progress before allowing the new session token to be returned. */
+export function checkSessionCredential(db: Db, userId: string, sessionId: string, verifiedHash: string) {
+  return db.transaction(async (tx) => {
+    const [credential] = await tx.select({ hash: account.password })
+      .from(account).where(credentialsFor(userId)).limit(1).for("share");
+    if (credential?.hash === verifiedHash) return true;
+    await tx.delete(session).where(and(eq(session.id, sessionId), eq(session.userId, userId)));
+    return false;
+  });
 }
 
 export async function deleteUser(db: Db, userId: string) {

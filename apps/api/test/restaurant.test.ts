@@ -1,4 +1,8 @@
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { createStaff } from "../src/modules/staff/service";
+import { currentDays } from "../src/modules/orders/helpers";
+import * as orderRepo from "../src/modules/orders/repo";
+import { updateStatus } from "../src/modules/orders/service";
 import {
   clock,
   makeApp,
@@ -9,7 +13,7 @@ import {
   signIn,
   type Client,
 } from "./helpers/app";
-import { closeTestDb, resetDb } from "./helpers/db";
+import { closeTestDb, resetDb, testDb } from "./helpers/db";
 
 const t = makeApp();
 let admin: Client;
@@ -26,6 +30,12 @@ beforeEach(async () => {
 afterAll(closeTestDb);
 
 describe("staff management (owner only)", () => {
+  it("allows retrying a username after membership creation fails", async () => {
+    const input = { name: "Cashier", username: "retrycashier", password: "staff-pass-1" };
+    await expect(createStaff(t.auth, testDb, "missing-restaurant", input)).rejects.toThrow();
+    expect((await a.owner.post("/api/restaurant/staff", input)).status).toBe(201);
+  });
+
   it("creates staff who can sign in and work on orders", async () => {
     const { staff } = await seedStaff(t, a.owner, "cashier1");
 
@@ -92,6 +102,16 @@ describe("staff management (owner only)", () => {
 });
 
 describe("menu and custom fields", () => {
+  it("preserves omitted boolean flags on partial updates", async () => {
+    const menu = await a.owner.post("/api/restaurant/menu", { name: "Pizza", active: false });
+    const field = await a.owner.post("/api/restaurant/fields", { label: "Table", required: true, public: true });
+
+    expect((await a.owner.patch(`/api/restaurant/menu/${menu.body.id}`, { name: "Pepperoni" })).body)
+      .toMatchObject({ name: "Pepperoni", active: false });
+    expect((await a.owner.patch(`/api/restaurant/fields/${field.body.id}`, { active: false })).body)
+      .toMatchObject({ required: true, public: true, active: false });
+  });
+
   it("lets the owner manage the menu; staff can read it", async () => {
     const created = await a.owner.post("/api/restaurant/menu", { name: "Margherita" });
     expect(created.status).toBe(201);
@@ -161,6 +181,33 @@ describe("settings", () => {
 });
 
 describe("orders", () => {
+  it("uses the previous local calendar day after a spring-forward transition", () => {
+    expect(currentDays({ timeZone: "America/New_York", now: () => new Date("2026-03-09T04:30:00Z") }))
+      .toEqual({ today: "2026-03-09", yesterday: "2026-03-08" });
+  });
+
+  it("rejects a status update if the order changed after it was read", async () => {
+    const { body: created } = await a.owner.post("/api/restaurant/orders", order("cas"));
+    const findOrder = orderRepo.findOrder;
+    let release!: () => void;
+    let markRead!: () => void;
+    const writeAllowed = new Promise<void>((resolve) => { release = resolve; });
+    const read = new Promise<void>((resolve) => { markRead = resolve; });
+    const spy = vi.spyOn(orderRepo, "findOrder").mockImplementationOnce(async (...args) => {
+      const row = await findOrder(...args);
+      markRead();
+      await writeAllowed;
+      return row;
+    });
+    const orderClock = { timeZone: "Africa/Cairo", now: () => clock.now };
+    const pending = updateStatus(testDb, a.id, created.id, "out_for_delivery", orderClock);
+    await read;
+    spy.mockRestore();
+    await updateStatus(testDb, a.id, created.id, "cancelled", orderClock).finally(release);
+    await expect(pending).rejects.toMatchObject({ code: "conflict" });
+    expect((await a.owner.get("/api/restaurant/orders")).body[0].status).toBe("cancelled");
+  });
+
   it("creates an order with items, fields and an absolute ETA", async () => {
     const field = await a.owner.post("/api/restaurant/fields", { label: "Table", public: true });
 
