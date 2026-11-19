@@ -6,11 +6,16 @@ import { parse } from "../../http/validate";
 import * as service from "./service";
 
 /** Owner only. Mounted inside the restaurant router. */
-export function staffRoutes({ db, auth }: Deps) {
+export function staffRoutes(deps: Deps) {
+  const { db, auth } = deps;
   const router = Router();
 
   router.get("/staff", requireOwner, async (_req, res) => {
     res.json(await service.listStaff(db, currentRestaurant(res).id));
+  });
+
+  router.get("/staff/:id", requireOwner, async (req, res) => {
+    res.json(await service.staffDetail(db, currentRestaurant(res).id, String(req.params.id), deps));
   });
 
   router.post("/staff", requireOwner, async (req, res) => {

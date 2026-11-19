@@ -1,6 +1,6 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, gte } from "drizzle-orm";
 import type { Db } from "../../db/client";
-import { customField, menuItem } from "../../db/schema";
+import { customField, menuItem, orderItem, orders } from "../../db/schema";
 
 export type MenuItemRow = typeof menuItem.$inferSelect;
 export type CustomFieldRow = typeof customField.$inferSelect;
@@ -53,4 +53,25 @@ export async function insertField(db: Db, values: typeof customField.$inferInser
 
 export async function updateField(db: Db, id: string, values: Partial<CustomFieldRow>) {
   await db.update(customField).set(values).where(eq(customField.id, id));
+}
+
+/** Every order line of one menu item from `fromDay` on. */
+export function itemSales(db: Db, restaurantId: string, menuItemId: string, fromDay: string) {
+  return db
+    .select({
+      orderId: orderItem.orderId,
+      quantity: orderItem.quantity,
+      businessDay: orders.businessDay,
+      createdAt: orders.createdAt,
+      status: orders.status,
+    })
+    .from(orderItem)
+    .innerJoin(orders, eq(orders.id, orderItem.orderId))
+    .where(
+      and(
+        eq(orderItem.menuItemId, menuItemId),
+        eq(orders.organizationId, restaurantId),
+        gte(orders.businessDay, fromDay),
+      ),
+    );
 }

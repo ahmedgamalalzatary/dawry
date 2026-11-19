@@ -34,12 +34,16 @@ export const phoneSchema = z
 
 export const passwordSchema = z.string().min(8).max(128);
 
+/** `/r/staff/login` and `/r/admin/login` are sign-in pages, so no restaurant may take these slugs. */
+export const RESERVED_SLUGS = ["staff", "admin"] as const;
+
 export const slugSchema = z
   .string()
   .trim()
   .min(2)
   .max(60)
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+  .refine((slug) => !(RESERVED_SLUGS as readonly string[]).includes(slug), "reserved");
 
 /** Staff usernames need a letter so they never collide with phone-number usernames. */
 export const staffUsernameSchema = z
@@ -107,11 +111,20 @@ export const customFieldSchema = customFieldFields.extend({
 export const updateMenuItemSchema = menuItemFields.partial();
 export const updateCustomFieldSchema = customFieldFields.partial();
 
+/** Where an uploaded logo is served (the API stores the file). */
+export const UPLOADED_LOGO = /^\/api\/public\/logos\/[0-9a-f-]{36}\?v=\d+$/;
+export const LOGO_TYPES = ["image/png", "image/jpeg", "image/webp"] as const;
+export const LOGO_MAX_BYTES = 1024 * 1024;
+
 export const restaurantSettingsSchema = z.object({
   name: requiredText(),
   phone: z.union([phoneSchema, z.literal("")]).default(""),
   logoUrl: z
-    .union([z.url({ protocol: /^https?$/ }).max(LIMITS.text), z.literal("")])
+    .union([
+      z.url({ protocol: /^https?$/ }).max(LIMITS.text),
+      z.string().regex(UPLOADED_LOGO),
+      z.literal(""),
+    ])
     .default(""),
 });
 

@@ -91,3 +91,52 @@ export async function counts(db: Db, today: string, from: string) {
     ]);
   return { restaurants, activeRestaurants, ordersToday, ordersLast30Days, customers };
 }
+
+export async function findRestaurant(db: Db, restaurantId: string) {
+  const [row] = await db
+    .select({
+      id: organization.id,
+      name: organization.name,
+      slug: organization.slug,
+      createdAt: organization.createdAt,
+      active: restaurantSettings.active,
+      phone: restaurantSettings.phone,
+      logoUrl: restaurantSettings.logoUrl,
+    })
+    .from(organization)
+    .innerJoin(restaurantSettings, eq(restaurantSettings.organizationId, organization.id))
+    .where(eq(organization.id, restaurantId))
+    .limit(1);
+  return row ?? null;
+}
+
+export function membersOf(db: Db, restaurantId: string) {
+  return db
+    .select({
+      role: member.role,
+      userId: user.id,
+      name: user.name,
+      username: user.username,
+      createdAt: member.createdAt,
+    })
+    .from(member)
+    .innerJoin(user, eq(user.id, member.userId))
+    .where(eq(member.organizationId, restaurantId));
+}
+
+/** New customers and restaurants since `since`. */
+export async function growth(db: Db, since: Date) {
+  const [newCustomers, newRestaurants] = await Promise.all([
+    first(
+      db
+        .select({ n: count() })
+        .from(user)
+        .leftJoin(member, eq(member.userId, user.id))
+        .where(
+          and(isNull(member.id), or(isNull(user.role), ne(user.role, "admin")), gte(user.createdAt, since)),
+        ),
+    ),
+    first(db.select({ n: count() }).from(organization).where(gte(organization.createdAt, since))),
+  ]);
+  return { newCustomers, newRestaurants };
+}

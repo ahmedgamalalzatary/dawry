@@ -1,6 +1,6 @@
-import { and, asc, eq, inArray, or } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, or } from "drizzle-orm";
 import type { Db } from "../../db/client";
-import { customField, menuItem, orderFieldValue, orderItem, orders } from "../../db/schema";
+import { customField, menuItem, orderFieldValue, orderItem, orders, user } from "../../db/schema";
 
 export type OrderRow = typeof orders.$inferSelect;
 export type NewOrder = typeof orders.$inferInsert;
@@ -94,4 +94,26 @@ export async function insertOrder(
 export async function updateOrder(db: Db, orderId: string, status: OrderRow["status"], values: Partial<NewOrder>) {
   const [result] = await db.update(orders).set(values).where(and(eq(orders.id, orderId), eq(orders.status, status)));
   return result.affectedRows > 0;
+}
+
+export function ordersOfDay(db: Db, restaurantId: string, day: string) {
+  return db
+    .select()
+    .from(orders)
+    .where(and(eq(orders.organizationId, restaurantId), eq(orders.businessDay, day)));
+}
+
+/** The newest orders one account entered for this restaurant. */
+export function recentByCreator(db: Db, restaurantId: string, userId: string, limit: number) {
+  return db
+    .select()
+    .from(orders)
+    .where(and(eq(orders.organizationId, restaurantId), eq(orders.createdById, userId)))
+    .orderBy(desc(orders.createdAt))
+    .limit(limit);
+}
+
+export async function userName(db: Db, userId: string) {
+  const [row] = await db.select({ id: user.id, name: user.name }).from(user).where(eq(user.id, userId)).limit(1);
+  return row ?? null;
 }

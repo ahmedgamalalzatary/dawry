@@ -1,9 +1,17 @@
-import type { createStaffSchema, StaffMember } from "@dawry/shared";
+import type { createStaffSchema, StaffMember, StaffMemberDetail } from "@dawry/shared";
+import { eq } from "drizzle-orm";
 import type { z } from "zod";
 import type { Auth } from "../../auth";
 import type { Db } from "../../db/client";
 import { notFound } from "../../http/errors";
 import { createAccount, deleteUser, setPassword } from "../accounts/service";
+import { orders } from "../../db/schema";
+import type { Clock } from "../orders/helpers";
+import * as orderRepo from "../orders/repo";
+import { summaries } from "../orders/service";
+import { personStats } from "../reports/helpers";
+import * as reportRepo from "../reports/repo";
+import { rangeOf } from "../reports/service";
 import * as repo from "./repo";
 
 export async function listStaff(db: Db, restaurantId: string): Promise<StaffMember[]> {
@@ -46,4 +54,31 @@ export async function resetStaffPassword(
 ) {
   await requireStaffOf(db, restaurantId, userId);
   await setPassword(auth, db, userId, password);
+}
+
+/** One member: who they are, their last 30 days, and the orders they entered last. */
+export async function staffDetail(
+  db: Db,
+  restaurantId: string,
+  userId: string,
+  clock: Clock,
+): Promise<StaffMemberDetail> {
+  const row = await repo.findMember(db, restaurantId, userId);
+  if (!row) throw notFound("Staff member not found");
+  const range = rangeOf(clock, 30);
+  const [rows, recent] = await Promise.all([
+    reportRepo.ordersSince(db, restaurantId, range.from, eq(orders.createdById, userId)),
+    orderRepo.recentByCreator(db, restaurantId, userId, 25),
+  ]);
+  return {
+    member: {
+      id: row.id,
+      name: row.name,
+      username: row.username ?? "",
+      createdAt: row.createdAt.toISOString(),
+      role: row.role === "owner" ? "owner" : "member",
+    },
+    stats: personStats(rows, clock.now()),
+    recent: await summaries(db, recent, clock),
+  };
 }

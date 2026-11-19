@@ -71,8 +71,9 @@ describe("staff management (owner only)", () => {
       await staff.post("/api/restaurant/fields", { label: "Table" }),
       await staff.put("/api/restaurant/settings", { name: "Hacked" }),
       await staff.get("/api/restaurant/reports"),
+      await staff.get("/api/restaurant/reports/data"),
     ];
-    expect(forbidden.map((r) => r.status)).toEqual([403, 403, 403, 403, 403, 403]);
+    expect(forbidden.map((r) => r.status)).toEqual([403, 403, 403, 403, 403, 403, 403]);
   });
 
   it("deletes staff and ends their session", async () => {
@@ -341,15 +342,57 @@ describe("reports", () => {
 
     const res = await a.owner.get("/api/restaurant/reports");
 
+    expect(res.body.range).toEqual({ from: "2026-10-21", to: "2026-11-19", days: 30 });
     expect(res.body.days).toEqual([
       {
         day: "2026-11-19",
         orders: 2,
         delivered: 0,
         cancelled: 0,
+        open: 2,
+        late: 2,
+        onTimeRate: 0,
         avgPrepMinutes: 25,
         avgDelayMinutes: 5,
+        avgDeliveryMinutes: null,
       },
     ]);
+    expect(res.body.items).toEqual([expect.objectContaining({ quantity: 2, orders: 2 })]);
+    expect(res.body.people).toEqual([expect.objectContaining({ orders: 2 })]);
+  });
+
+  it("accepts a 7-day window", async () => {
+    const res = await a.owner.get("/api/restaurant/reports?days=7");
+    expect(res.body.range).toEqual({ from: "2026-11-13", to: "2026-11-19", days: 7 });
+  });
+
+  it("returns the raw orders of a period for the reports page", async () => {
+    await a.owner.post("/api/restaurant/orders", order("7", 20));
+
+    const res = await a.owner.get("/api/restaurant/reports/data?from=2026-11-01&to=2026-11-19");
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ from: "2026-11-01", to: "2026-11-19" });
+    expect(res.body.orders).toEqual([
+      expect.objectContaining({ invoiceNumber: "7", businessDay: "2026-11-19", status: "preparing" }),
+    ]);
+    expect(res.body.items).toHaveLength(1);
+    expect(res.body.restaurants).toHaveLength(1);
+    expect(res.body.people.length).toBeGreaterThan(0);
+  });
+
+  it("falls back to the last 30 days, swaps reversed periods and caps long ones", async () => {
+    expect((await a.owner.get("/api/restaurant/reports/data?from=bad")).body).toMatchObject({
+      from: "2026-10-21",
+      to: "2026-11-19",
+    });
+    expect((await a.owner.get("/api/restaurant/reports/data?from=2026-11-19&to=2026-11-01")).body).toMatchObject({
+      from: "2026-11-01",
+      to: "2026-11-19",
+    });
+    expect((await a.owner.get("/api/restaurant/reports/data?from=2020-01-01&to=2026-11-19")).body).toMatchObject({
+      from: "2025-11-19",
+      to: "2026-11-19",
+    });
   });
 });

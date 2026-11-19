@@ -1,176 +1,130 @@
 "use client";
 
 import type { OrderStatus, PublicOrder } from "@dawry/shared";
-import { Bike, Check, ChefHat, PackageCheck, Phone, TriangleAlert, XCircle } from "lucide-react";
+import { Bike, BookmarkCheck, Check, PackageCheck, Phone, TriangleAlert, XCircle } from "lucide-react";
 import { useLocale, useTimeZone, useTranslations } from "next-intl";
-import type { ReactNode } from "react";
 import { buttonVariants } from "@/components/ui/button";
+import { Flap } from "@/components/ui/flap";
 import { etaDisplay, formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { FavoriteButton } from "./favorite-button";
 import { RestaurantAvatar } from "./restaurant-avatar";
 
-const STEPS: { status: OrderStatus; icon: typeof ChefHat }[] = [
-  { status: "preparing", icon: ChefHat },
-  { status: "out_for_delivery", icon: Bike },
-  { status: "delivered", icon: PackageCheck },
-];
+const STEPS: OrderStatus[] = ["preparing", "out_for_delivery", "delivered"];
 
-const TICKET_TONE: Record<OrderStatus, string> = {
-  preparing: "bg-brand text-brand-foreground",
-  out_for_delivery: "bg-teal text-white dark:text-[#0b1322]",
-  delivered: "bg-success text-white dark:text-[#0b1322]",
-  cancelled: "bg-card text-foreground",
-};
-
+/**
+ * The customer's order as a departure: the board at the top answers "how long,
+ * and how many before me"; the concourse below holds the timetable and the receipt.
+ */
 export function OrderStatusView({
   order,
   now,
-  footer,
+  live = false,
+  saved = false,
+  favorite = null,
 }: {
   order: PublicOrder;
   now: Date;
-  footer?: ReactNode;
+  live?: boolean;
+  saved?: boolean;
+  favorite?: boolean | null;
 }) {
   const t = useTranslations("order");
   const tr = useTranslations("restaurant");
-  const locale = useLocale();
-  const eta = etaDisplay(order.etaMode, order.etaAt, now);
-  const tone = TICKET_TONE[order.status];
 
   return (
-    <article className="flex flex-col gap-6">
-      <header className="flex items-center gap-3">
-        <RestaurantAvatar name={order.restaurant.name} logoUrl={order.restaurant.logoUrl} />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate font-semibold">{order.restaurant.name}</span>
-          {footer}
-        </div>
-      </header>
-
-      {/* The ticket */}
-      <div className="ticket-shadow ticket-print">
-        <div className={cn("ticket-top rounded-t-3xl px-6 pt-5 pb-7", tone)}>
-          <div className="flex items-center justify-between gap-3">
-            <h1 className="text-base font-semibold">{t("invoice", { number: order.invoiceNumber })}</h1>
-            <span className="rounded-full bg-black/10 px-3 py-1 text-xs font-semibold dark:bg-black/15">
-              {t(`status.${order.status}`)}
-            </span>
+    <article className="flex flex-1 flex-col">
+      {/* The board */}
+      <section className="bg-board text-board-foreground">
+        <div className="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 pt-5 pb-7 sm:px-6 sm:pt-8 sm:pb-9">
+          <div className="flex items-center gap-3">
+            <RestaurantAvatar
+              name={order.restaurant.name}
+              logoUrl={order.restaurant.logoUrl}
+              className="bg-board-raised text-board-foreground size-9 rounded-lg text-sm"
+            />
+            <span className="min-w-0 flex-1 truncate font-medium">{order.restaurant.name}</span>
+            {live ? (
+              <span className="flex items-center gap-2 text-xs text-[#4cc898]">
+                <span className="live-dot" aria-hidden />
+                {t("live")}
+              </span>
+            ) : null}
           </div>
-          <TicketHero order={order} />
-        </div>
-        <div className={cn("ticket-bottom rounded-b-3xl px-6 pb-6", tone)}>
-          <div className="perforation mx-1 mb-5" />
-          <TicketFoot order={order} eta={eta} locale={locale} />
-        </div>
-      </div>
 
-      {order.status !== "cancelled" ? <StepTracker current={order.status} /> : null}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h1 className="font-heading text-board-muted text-sm font-medium">
+              {t("invoice", { number: order.invoiceNumber })}
+            </h1>
+            {favorite !== null ? <FavoriteButton slug={order.restaurant.slug} initial={favorite} /> : null}
+          </div>
 
-      {/* The receipt */}
-      <section className="bg-card flex flex-col rounded-2xl border">
-        <h2 className="px-5 pt-4 pb-2 text-sm font-semibold">{t("items")}</h2>
-        <ul className="flex flex-col px-5 pb-3">
-          {order.items.map((item, index) => (
-            <li key={index} className="flex items-baseline gap-3 py-2">
-              <span className="font-medium">{item.name}</span>
-              <span aria-hidden className="border-border mb-1 flex-1 border-b border-dotted" />
-              <span className="text-muted-foreground tabular-nums">× {item.quantity}</span>
-            </li>
-          ))}
-        </ul>
-        {order.fields.length > 0 ? (
-          <dl className="bg-muted/60 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 rounded-b-2xl border-t border-dashed px-5 py-4 text-sm">
-            {order.fields.map((field, index) => (
-              <div key={index} className="contents">
-                <dt className="text-muted-foreground">{field.label}</dt>
-                <dd className="font-medium">{field.value}</dd>
-              </div>
-            ))}
-          </dl>
-        ) : null}
+          {order.status === "preparing" ? <Departure order={order} now={now} /> : <Arrival status={order.status} />}
+        </div>
       </section>
 
-      {order.restaurant.phone ? (
-        <a
-          href={`tel:${order.restaurant.phone}`}
-          className={cn(buttonVariants({ variant: "outline", size: "lg" }), "w-full")}
-        >
-          <Phone />
-          {tr("call")}
-        </a>
-      ) : null}
+      {/* The concourse */}
+      <div className="mx-auto flex w-full max-w-lg flex-col gap-8 px-4 py-7 sm:px-6">
+        {order.status !== "cancelled" ? <Timeline current={order.status} /> : null}
+
+        <section className="flex flex-col gap-3">
+          <h2 className="text-sm font-semibold">{t("items")}</h2>
+          <ul className="bg-surface divide-y rounded-xl border">
+            {order.items.map((item, index) => (
+              <li key={index} className="flex items-baseline justify-between gap-4 px-4 py-3">
+                <span className="font-medium">{item.name}</span>
+                <span className="figure text-muted-foreground shrink-0" dir="ltr">
+                  × {item.quantity}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {order.fields.length > 0 ? (
+            <dl className="text-sm">
+              {order.fields.map((field, index) => (
+                <div key={index} className="flex justify-between gap-4 border-b border-dashed py-2.5 last:border-b-0">
+                  <dt className="text-muted-foreground">{field.label}</dt>
+                  <dd className="font-medium">{field.value}</dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
+        </section>
+
+        <div className="flex flex-col gap-3">
+          {order.restaurant.phone ? (
+            <a
+              href={`tel:${order.restaurant.phone}`}
+              className={cn(buttonVariants({ variant: "outline", size: "lg" }), "w-full")}
+            >
+              <Phone />
+              {tr("call")}
+            </a>
+          ) : null}
+          {saved ? (
+            <p className="text-muted-foreground flex items-center justify-center gap-1.5 text-xs">
+              <BookmarkCheck aria-hidden className="size-3.5" />
+              {t("saved")}
+            </p>
+          ) : null}
+        </div>
+      </div>
     </article>
   );
 }
 
-/** The big thing on the ticket: your place in line, or what happened. */
-function TicketHero({ order }: { order: PublicOrder }) {
+/** While preparing: two board columns, the time and the line ahead. */
+function Departure({ order, now }: { order: PublicOrder; now: Date }) {
   const t = useTranslations("order");
-
-  if (order.status === "preparing") {
-    return (
-      <div className="flex flex-col items-center pt-6 pb-1 text-center">
-        <p className="sr-only">{t("ahead", { count: order.ordersAhead })}</p>
-        {order.ordersAhead === 0 ? (
-          <p aria-hidden className="py-4 text-5xl leading-none font-bold tracking-tight">
-            {t("next")}
-          </p>
-        ) : (
-          <>
-            <p aria-hidden className="text-[7rem] leading-[0.95] font-bold tracking-tighter tabular-nums">
-              {order.ordersAhead}
-            </p>
-            <p aria-hidden className="text-lg font-medium">
-              {t("aheadUnit", { count: order.ordersAhead })}
-            </p>
-          </>
-        )}
-      </div>
-    );
-  }
-
-  const Icon =
-    order.status === "out_for_delivery" ? Bike : order.status === "delivered" ? PackageCheck : XCircle;
-  return (
-    <div className="flex justify-center pt-7 pb-2">
-      <span
-        className={cn(
-          "flex size-24 items-center justify-center rounded-full",
-          order.status === "cancelled" ? "bg-muted text-muted-foreground" : "bg-black/10",
-        )}
-      >
-        <Icon aria-hidden className="size-12" strokeWidth={1.6} />
-      </span>
-    </div>
-  );
-}
-
-function TicketFoot({
-  order,
-  eta,
-  locale,
-}: {
-  order: PublicOrder;
-  eta: ReturnType<typeof etaDisplay>;
-  locale: string;
-}) {
-  const t = useTranslations("order");
+  const locale = useLocale();
   const timeZone = useTimeZone();
-
-  if (order.status !== "preparing") {
-    const message =
-      order.status === "out_for_delivery"
-        ? t("outMessage")
-        : order.status === "delivered"
-          ? t("deliveredMessage")
-          : t("cancelledMessage");
-    return <p className="text-center text-lg leading-snug font-semibold text-balance">{message}</p>;
-  }
+  const eta = etaDisplay(order.etaMode, order.etaAt, now);
 
   // Late: a 0:00 countdown says nothing useful, show the expected time instead.
   const showClock = order.late || eta.kind === "clock";
+  const clock = formatTime(order.etaAt, locale, timeZone);
   const sentence = showClock
-    ? t("eta.at", { time: formatTime(order.etaAt, locale, timeZone) })
+    ? t("eta.at", { time: clock })
     : eta.kind === "countdown"
       ? t("eta.countdown", { remaining: eta.remaining })
       : t("eta.minutes", { minutes: eta.minutes });
@@ -178,36 +132,53 @@ function TicketFoot({
   return (
     <div className="flex flex-col gap-4">
       <p className="sr-only">{sentence}</p>
-      <div aria-hidden className="flex items-end justify-between gap-4">
-        <div className="flex flex-col">
-          <span className="text-sm font-medium opacity-75">
+      <p className="sr-only">{t("ahead", { count: order.ordersAhead })}</p>
+
+      <div aria-hidden className="border-board-line grid grid-cols-[1.4fr_1fr] overflow-hidden rounded-xl border">
+        <div className="border-board-line flex flex-col gap-1 border-e p-4 sm:p-5">
+          <span className="text-board-muted text-xs font-medium">
             {showClock ? t("expectedAt") : eta.kind === "countdown" ? t("readyIn") : t("about")}
           </span>
-          {/* Countdowns read left-to-right; an Arabic clock time keeps its own order ("11:22 م"). */}
-          <span className="text-4xl leading-tight font-bold tabular-nums" dir={showClock ? undefined : "ltr"}>
-            {showClock
-              ? formatTime(order.etaAt, locale, timeZone)
-              : eta.kind === "countdown"
-                ? eta.remaining
-                : eta.kind === "minutes"
-                  ? eta.minutes
-                  : null}
+          {/* Countdowns read left-to-right; an Arabic clock time keeps its own order ("8:45 م"). */}
+          <span
+            className={cn(
+              "figure text-[2.75rem] leading-none font-semibold tracking-tight sm:text-6xl",
+              order.late && "text-[#ff7b6e]",
+            )}
+            dir={showClock ? undefined : "ltr"}
+          >
+            {showClock ? (
+              <ClockFigure clock={clock} />
+            ) : eta.kind === "countdown" ? (
+              eta.remaining
+            ) : eta.kind === "minutes" ? (
+              <>
+                <Flap value={eta.minutes} />
+                <span className="text-board-muted ms-1.5 text-base font-normal">{t("minutesUnit")}</span>
+              </>
+            ) : null}
           </span>
+          {eta.kind === "countdown" && !order.late ? (
+            <span className="text-board-muted mt-1 text-xs">{t("eta.at", { time: clock })}</span>
+          ) : null}
         </div>
-        {eta.kind === "countdown" && !order.late ? (
-          <span className="pb-1.5 text-sm font-medium opacity-75">
-            {t("eta.at", { time: formatTime(eta.clock, locale, timeZone) })}
-          </span>
-        ) : eta.kind === "minutes" && !order.late ? (
-          <span className="pb-1.5 text-sm font-medium opacity-75">{t("minutesUnit")}</span>
-        ) : null}
+        <div className="flex flex-col gap-1 p-4 sm:p-5">
+          <span className="text-board-muted text-xs font-medium">{t("aheadLabel")}</span>
+          {order.ordersAhead === 0 ? (
+            <span className="font-heading pt-1 text-2xl leading-tight font-semibold text-[#4cc898] sm:text-3xl">
+              {t("next")}
+            </span>
+          ) : (
+            <span className="text-[2.75rem] leading-none font-semibold sm:text-6xl">
+              <Flap value={order.ordersAhead} />
+            </span>
+          )}
+        </div>
       </div>
+
       {order.late ? (
-        <p
-          role="alert"
-          className="bg-chili flex items-start gap-2 rounded-xl px-4 py-3 text-sm font-medium text-white dark:text-[#0b1322]"
-        >
-          <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
+        <p role="alert" className="flex items-start gap-2.5 rounded-lg bg-[#ff7b6e]/12 px-4 py-3 text-sm text-[#ffb3aa]">
+          <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-[#ff7b6e]" />
           {t("late")}
         </p>
       ) : null}
@@ -215,46 +186,75 @@ function TicketFoot({
   );
 }
 
-function StepTracker({ current }: { current: OrderStatus }) {
+/** "8:45 م" as a board figure: the digits large, the AM/PM marker small beside them. */
+function ClockFigure({ clock }: { clock: string }) {
+  const [digits, ...marker] = clock.split(" ");
+  return (
+    <span className="inline-flex items-baseline gap-1.5 whitespace-nowrap">
+      <Flap value={clock}>{digits}</Flap>
+      {marker.length > 0 ? <span className="text-board-muted text-lg font-normal">{marker.join(" ")}</span> : null}
+    </span>
+  );
+}
+
+/** After preparing: one signal and one sentence. */
+function Arrival({ status }: { status: Exclude<OrderStatus, "preparing"> }) {
   const t = useTranslations("order");
-  const currentIndex = STEPS.findIndex((s) => s.status === current);
+  const view = {
+    out_for_delivery: { icon: Bike, tone: "text-[#b49cff]", message: t("outMessage") },
+    delivered: { icon: PackageCheck, tone: "text-[#4cc898]", message: t("deliveredMessage") },
+    cancelled: { icon: XCircle, tone: "text-board-muted", message: t("cancelledMessage") },
+  }[status];
+  const Icon = view.icon;
+  return (
+    <div className="border-board-line flex items-center gap-4 rounded-xl border p-5">
+      <Icon aria-hidden className={cn("size-10 shrink-0", view.tone)} strokeWidth={1.5} />
+      <div className="flex flex-col gap-1">
+        <span className={cn("font-heading text-xl font-semibold", view.tone)}>{t(`status.${status}`)}</span>
+        <p className="text-board-foreground/85 text-sm">{view.message}</p>
+      </div>
+    </div>
+  );
+}
+
+/** The route as a line of stops; the current stop is marked. */
+function Timeline({ current }: { current: OrderStatus }) {
+  const t = useTranslations("order");
+  const currentIndex = STEPS.indexOf(current);
 
   return (
     <ol aria-label="Status" className="grid grid-cols-3">
-      {STEPS.map(({ status, icon: Icon }, index) => {
-        const done = index < currentIndex || (index === currentIndex && status === "delivered");
-        const active = index === currentIndex && !done;
+      {STEPS.map((status, index) => {
+        const reached = index <= currentIndex;
+        const done = index < currentIndex || current === "delivered";
         return (
           <li
             key={status}
             aria-current={status === current ? "step" : undefined}
-            className="relative flex flex-col items-center gap-2 text-center"
+            className="relative flex flex-col gap-2.5"
           >
-            {index > 0 ? (
+            <span className="flex items-center">
               <span
-                aria-hidden
                 className={cn(
-                  "absolute top-5 end-1/2 h-0.5 w-full -translate-y-1/2",
-                  index <= currentIndex ? "bg-foreground" : "bg-border",
+                  "relative z-10 flex size-6 shrink-0 items-center justify-center rounded-full border-2",
+                  done
+                    ? "border-go bg-go text-white dark:text-[#04140e]"
+                    : reached
+                      ? "border-preparing bg-surface"
+                      : "border-border-strong bg-surface",
                 )}
-              />
-            ) : null}
-            <span
-              className={cn(
-                "relative flex size-10 items-center justify-center rounded-full border-2 transition-colors",
-                done && "border-foreground bg-foreground text-background",
-                active && "border-brand-strong bg-brand text-brand-foreground ring-brand/25 ring-4",
-                !done && !active && "border-border bg-card text-muted-foreground",
-              )}
-            >
-              {done ? <Check aria-hidden className="size-5" /> : <Icon aria-hidden className="size-5" />}
+              >
+                {done ? (
+                  <Check aria-hidden className="size-3.5" strokeWidth={3} />
+                ) : reached ? (
+                  <span className="bg-preparing size-2 rounded-full" />
+                ) : null}
+              </span>
+              {index < STEPS.length - 1 ? (
+                <span aria-hidden className={cn("h-0.5 flex-1", index < currentIndex ? "bg-go" : "bg-border-strong")} />
+              ) : null}
             </span>
-            <span
-              className={cn(
-                "text-xs font-medium",
-                index <= currentIndex ? "text-foreground" : "text-muted-foreground",
-              )}
-            >
+            <span className={cn("text-xs font-medium", reached ? "text-foreground" : "text-muted-foreground")}>
               {t(`status.${status}`)}
             </span>
           </li>

@@ -5,142 +5,139 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Dawry design tokens: the queue ticket.
- * Saffron ticket stock, deep ink print, cool paper ground.
- * Status colours are fixed roles: preparing = saffron, on the way = teal,
- * delivered = green, late = chili, cancelled/destructive = brick.
+ * Dawry design tokens: the station departures board.
+ * A charcoal board (the app shell), a light neutral concourse (the work area),
+ * hairline-ruled rows instead of card piles, and signal colours with fixed jobs:
+ *   preparing = amber · out for delivery = violet · delivered = green
+ *   late = red · cancelled = grey.
+ * Alexandria (Egyptian signage lineage) sets headings and every figure;
+ * Noto Sans Arabic sets reading text.
  */
 @theme inline {
+  --font-sans: var(--font-body), var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display), var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-display), var(--font-body), ui-sans-serif, system-ui, sans-serif;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-heading: var(--font-sans);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-destructive-soft: var(--destructive-soft);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
+  --color-surface: var(--surface);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--foreground);
   --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
+  --color-popover-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--muted);
+  --color-secondary-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle: var(--subtle);
+  --color-accent: var(--muted);
+  --color-accent-foreground: var(--foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-link: var(--link);
 
-  --color-brand: var(--brand);
-  --color-brand-strong: var(--brand-strong);
-  --color-brand-foreground: var(--brand-foreground);
-  --color-brand-soft: var(--brand-soft);
-  --color-ink: var(--ink);
-  --color-ink-foreground: var(--ink-foreground);
-  --color-teal: var(--teal);
-  --color-teal-soft: var(--teal-soft);
-  --color-success: var(--success);
-  --color-success-soft: var(--success-soft);
-  --color-chili: var(--chili);
-  --color-chili-soft: var(--chili-soft);
+  --color-board: var(--board);
+  --color-board-raised: var(--board-raised);
+  --color-board-line: var(--board-line);
+  --color-board-foreground: var(--board-foreground);
+  --color-board-muted: var(--board-muted);
 
-  --radius-sm: calc(var(--radius) * 0.5);
-  --radius-md: calc(var(--radius) * 0.75);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.35);
-  --radius-2xl: calc(var(--radius) * 1.75);
-  --radius-3xl: calc(var(--radius) * 2.25);
-  --radius-4xl: calc(var(--radius) * 2.75);
+  --color-preparing: var(--preparing);
+  --color-preparing-soft: var(--preparing-soft);
+  --color-transit: var(--transit);
+  --color-transit-soft: var(--transit-soft);
+  --color-go: var(--go);
+  --color-go-soft: var(--go-soft);
+  --color-late: var(--late);
+  --color-late-soft: var(--late-soft);
+  --color-destructive: var(--late);
+  --color-destructive-soft: var(--late-soft);
 
-  --shadow-ticket: 0 1px 0 0 var(--ticket-edge), 0 10px 24px -14px var(--ticket-shadow);
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 18px;
+
+  --shadow-raise: 0 1px 2px rgb(28 27 25 / 0.06), 0 8px 24px -12px rgb(28 27 25 / 0.18);
+  --shadow-float: 0 2px 6px rgb(28 27 25 / 0.08), 0 24px 56px -20px rgb(28 27 25 / 0.38);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 :root {
-  --radius: 0.75rem;
+  --radius: 10px;
 
-  --background: #f1f3f7;
-  --foreground: #16233f;
-  --card: #ffffff;
-  --card-foreground: #16233f;
+  /* Concourse */
+  --background: #f5f5f3;
+  --surface: #ffffff;
   --popover: #ffffff;
-  --popover-foreground: #16233f;
+  --foreground: #1c1b19;
+  --muted: #eeedea;
+  --subtle: #fafaf8;
+  --muted-foreground: #66635d;
+  --border: #e5e3df;
+  --border-strong: #cfccc6;
+  --input: #d4d1cb;
+  --ring: #12775a;
+  --link: #0e6b50;
 
-  --primary: #16233f;
+  --primary: #1c1b19;
   --primary-foreground: #ffffff;
-  --secondary: #e4e8ef;
-  --secondary-foreground: #16233f;
-  --muted: #e8ebf1;
-  --muted-foreground: #586378;
-  --accent: #e8ebf1;
-  --accent-foreground: #16233f;
 
-  --brand: #f2b705;
-  --brand-strong: #d99e00;
-  --brand-foreground: #16233f;
-  --brand-soft: #fdf2cc;
-  --ink: #16233f;
-  --ink-foreground: #ffffff;
+  /* Board (shell) */
+  --board: #1c1b19;
+  --board-raised: #2a2825;
+  --board-line: #36342f;
+  --board-foreground: #f3f2ef;
+  --board-muted: #a29e96;
 
-  --teal: #0b7d74;
-  --teal-soft: #dbf1ee;
-  --success: #1b7f46;
-  --success-soft: #dff3e7;
-  --chili: #d2461b;
-  --chili-soft: #fde5da;
-  --destructive: #c2342b;
-  --destructive-soft: #fbe3e1;
-
-  --border: #d9dee7;
-  --input: #c9d0dc;
-  --ring: #d99e00;
-
-  --ticket-edge: #d9dee7;
-  --ticket-shadow: rgb(22 35 63 / 0.35);
-  --ticket-shadow-soft: rgb(22 35 63 / 0.12);
+  /* Signals */
+  --preparing: #a35f00;
+  --preparing-soft: #fcf1de;
+  --transit: #6d48c9;
+  --transit-soft: #f0ebfb;
+  --go: #12775a;
+  --go-soft: #e0f2eb;
+  --late: #c3352b;
+  --late-soft: #fbe8e6;
 }
 
 .dark {
-  --background: #0b1322;
-  --foreground: #e7ebf3;
-  --card: #131e34;
-  --card-foreground: #e7ebf3;
-  --popover: #17233c;
-  --popover-foreground: #e7ebf3;
+  --background: #121110;
+  --surface: #1a1918;
+  --popover: #21201e;
+  --foreground: #ecebe7;
+  --muted: #262522;
+  --subtle: #161514;
+  --muted-foreground: #a29e96;
+  --border: #2d2b28;
+  --border-strong: #3d3a36;
+  --input: #3d3a36;
+  --ring: #4cc898;
+  --link: #6fd8ad;
 
-  --primary: #f2b705;
-  --primary-foreground: #16233f;
-  --secondary: #1d2a45;
-  --secondary-foreground: #e7ebf3;
-  --muted: #1a2640;
-  --muted-foreground: #98a3b8;
-  --accent: #1d2a45;
-  --accent-foreground: #e7ebf3;
+  --primary: #ecebe7;
+  --primary-foreground: #1c1b19;
 
-  --brand: #f2b705;
-  --brand-strong: #ffc829;
-  --brand-foreground: #16233f;
-  --brand-soft: #352c0d;
-  --ink: #e7ebf3;
-  --ink-foreground: #0b1322;
+  --board: #0c0b0a;
+  --board-raised: #1e1d1b;
+  --board-line: #2b2926;
+  --board-foreground: #ecebe7;
+  --board-muted: #94908a;
 
-  --teal: #3cc4b6;
-  --teal-soft: #0f2f2e;
-  --success: #4fcf86;
-  --success-soft: #12301f;
-  --chili: #ff7d4f;
-  --chili-soft: #3a1c10;
-  --destructive: #f26a5f;
-  --destructive-soft: #3a1714;
-
-  --border: #24324f;
-  --input: #2e3d5d;
-  --ring: #f2b705;
-
-  --ticket-edge: #24324f;
-  --ticket-shadow: rgb(0 0 0 / 0.7);
-  --ticket-shadow-soft: rgb(0 0 0 / 0.45);
+  --preparing: #f2b25c;
+  --preparing-soft: #2d2213;
+  --transit: #b49cff;
+  --transit-soft: #241c38;
+  --go: #4cc898;
+  --go-soft: #102b23;
+  --late: #ff7b6e;
+  --late-soft: #34171a;
 }
 
 @layer base {
@@ -150,75 +147,78 @@
   html {
     @apply font-sans;
     color-scheme: light;
+    -webkit-tap-highlight-color: transparent;
   }
   html.dark {
     color-scheme: dark;
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "tnum" 0;
+    text-rendering: optimizeLegibility;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-heading;
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
   }
   ::selection {
-    background: var(--brand);
-    color: var(--brand-foreground);
+    background: color-mix(in oklab, var(--ring) 28%, transparent);
+    color: inherit;
+  }
+  input,
+  textarea {
+    caret-color: var(--ring);
+  }
+  /* Phone numbers, usernames and invoice numbers are set left-to-right, but in an
+     Arabic layout they still sit on the reading edge of their column. */
+  [dir="rtl"] [dir="ltr"]:not(input, textarea, code, select) {
+    text-align: right;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+  }
+}
+
+@layer utilities {
+  /* Every figure on the board: same width digits, display face. */
+  .figure {
+    font-family: var(--font-display), var(--font-body), sans-serif;
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: "tnum" 1, "lnum" 1;
+  }
+}
+
+/* A link that makes its whole (position: relative) row clickable. Controls in the
+   row sit above it with `relative z-10`. */
+@utility row-link {
+  outline: none;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+  &:focus-visible::after {
+    outline: 2px solid var(--ring);
+    outline-offset: -2px;
   }
 }
 
 @layer components {
-  /*
-   * A ticket: semicircle notches cut into both sides at --notch (from the top).
-   * Pair with .perforation on the line between the two halves.
-   */
-  .ticket {
-    --notch: 50%;
-    --notch-size: 11px;
-    mask:
-      radial-gradient(circle var(--notch-size) at 0 var(--notch), #0000 98%, #000) left / 51% 100% no-repeat,
-      radial-gradient(circle var(--notch-size) at 100% var(--notch), #0000 98%, #000) right / 51% 100% no-repeat;
-  }
-
-  /* A ticket in two stacked halves: notches sit exactly on the tear line. */
-  .ticket-top {
-    --notch-size: 11px;
-    mask:
-      radial-gradient(circle var(--notch-size) at 0 100%, #0000 98%, #000) left / 51% 100% no-repeat,
-      radial-gradient(circle var(--notch-size) at 100% 100%, #0000 98%, #000) right / 51% 100% no-repeat;
-  }
-  .ticket-bottom {
-    --notch-size: 11px;
-    mask:
-      radial-gradient(circle var(--notch-size) at 0 0, #0000 98%, #000) left / 51% 100% no-repeat,
-      radial-gradient(circle var(--notch-size) at 100% 0, #0000 98%, #000) right / 51% 100% no-repeat;
-  }
-
-  /* A horizontal ticket: the stub (--stub wide, at the inline start) tears off. */
-  .ticket-h {
-    --stub: 5.5rem;
-    --stub-at: var(--stub);
-    mask:
-      radial-gradient(circle 8px at var(--stub-at) 0, #0000 98%, #000) top / 100% 51% no-repeat,
-      radial-gradient(circle 8px at var(--stub-at) 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
-  }
-  [dir="rtl"] .ticket-h {
-    --stub-at: calc(100% - var(--stub));
-  }
-
-  /* Masks clip box-shadows, so tickets cast theirs from a wrapper. */
-  .ticket-shadow {
-    filter: drop-shadow(0 1px 0 var(--ticket-edge)) drop-shadow(0 10px 14px var(--ticket-shadow-soft));
-  }
-
-  .perforation {
-    background-image: linear-gradient(to right, currentColor 50%, transparent 0);
-    background-size: 10px 2px;
-    background-repeat: repeat-x;
-    height: 2px;
-    opacity: 0.28;
-  }
-
-  /* The ticket prints out of the slot once, on first paint. */
-  .ticket-print {
-    animation: ticket-print 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  /* The signature move: a figure flips in like a board flap when its value changes. */
+  .flap {
+    display: inline-block;
+    transform-origin: 50% 50%;
+    animation: flap 420ms var(--ease-out-expo) both;
   }
 
   .live-dot {
@@ -235,19 +235,17 @@
     inset: 0;
     border-radius: inherit;
     background: currentColor;
-    animation: live-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+    animation: live-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
   }
 }
 
-@keyframes ticket-print {
+@keyframes flap {
   from {
-    transform: translateY(-14px);
-    clip-path: inset(0 0 100% 0);
-    opacity: 0.4;
+    transform: perspective(240px) rotateX(-88deg);
+    opacity: 0.2;
   }
   to {
-    transform: translateY(0);
-    clip-path: inset(0 0 0 0);
+    transform: perspective(240px) rotateX(0);
     opacity: 1;
   }
 }
@@ -261,8 +259,33 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ticket-print,
+  .flap,
   .live-dot::after {
     animation: none;
+  }
+}
+
+/* Printed reports (Export PDF): A4, no app chrome, ink that survives the printer. */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+  }
+  * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  thead {
+    display: table-header-group;
+  }
+  tfoot {
+    display: table-row-group;
+  }
+  [data-sonner-toaster] {
+    display: none !important;
   }
 }

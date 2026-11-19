@@ -3,6 +3,7 @@ import type { Deps } from "../../deps";
 import { notFound } from "../../http/errors";
 import { openStream } from "../../http/events";
 import { currentUser } from "../../http/guards";
+import { findLogo } from "../settings/service";
 import * as service from "./service";
 
 /** Anyone. Mounted at /api/public. */
@@ -13,6 +14,19 @@ export function publicRoutes(deps: Deps) {
   router.get("/restaurants", async (req, res) => {
     const q = typeof req.query.q === "string" ? req.query.q : "";
     res.json(await service.searchRestaurants(db, q));
+  });
+
+  // Uploaded logos. The URL carries ?v=<upload time>, so a new upload is a new URL.
+  router.get("/logos/:id", async (req, res) => {
+    const logo = await findLogo(db, String(req.params.id));
+    if (!logo) throw notFound();
+    res
+      .set({
+        "Content-Type": logo.mime,
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "Content-Security-Policy": "default-src 'none'",
+      })
+      .send(logo.data);
   });
 
   router.get("/r/:slug", async (req, res) => {

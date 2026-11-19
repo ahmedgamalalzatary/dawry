@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import type { Db } from "../../db/client";
-import { organization, restaurantSettings } from "../../db/schema";
+import { organization, restaurantLogo, restaurantSettings } from "../../db/schema";
 
 export async function findSettings(db: Db, restaurantId: string) {
   const [row] = await db
@@ -29,4 +29,30 @@ export async function saveSettings(
       .set({ phone: values.phone, logoUrl: values.logoUrl })
       .where(eq(restaurantSettings.organizationId, restaurantId));
   });
+}
+
+export async function saveLogo(db: Db, restaurantId: string, mime: string, data: Buffer, logoUrl: string) {
+  await db.transaction(async (tx) => {
+    await tx
+      .insert(restaurantLogo)
+      .values({ organizationId: restaurantId, mime, data })
+      .onDuplicateKeyUpdate({ set: { mime, data, updatedAt: new Date() } });
+    await tx.update(restaurantSettings).set({ logoUrl }).where(eq(restaurantSettings.organizationId, restaurantId));
+  });
+}
+
+export async function deleteLogo(db: Db, restaurantId: string) {
+  await db.transaction(async (tx) => {
+    await tx.delete(restaurantLogo).where(eq(restaurantLogo.organizationId, restaurantId));
+    await tx.update(restaurantSettings).set({ logoUrl: "" }).where(eq(restaurantSettings.organizationId, restaurantId));
+  });
+}
+
+export async function findLogo(db: Db, restaurantId: string) {
+  const [row] = await db
+    .select({ mime: restaurantLogo.mime, data: restaurantLogo.data })
+    .from(restaurantLogo)
+    .where(eq(restaurantLogo.organizationId, restaurantId))
+    .limit(1);
+  return row ?? null;
 }

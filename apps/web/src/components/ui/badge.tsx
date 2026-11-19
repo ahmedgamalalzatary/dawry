@@ -3,47 +3,37 @@ import { useRender } from "@base-ui/react/use-render"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 
+/** A signal: a coloured dot plus a word. Colour is never the only carrier of meaning. */
 const badgeVariants = cva(
-  "group/badge inline-flex h-6 w-fit shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full border border-transparent px-2.5 text-xs font-medium whitespace-nowrap [&>svg]:pointer-events-none [&>svg]:size-3.5!",
+  "inline-flex h-6 w-fit shrink-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium whitespace-nowrap before:size-1.5 before:shrink-0 before:rounded-full before:bg-current",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground",
-        secondary: "bg-secondary text-secondary-foreground",
-        outline: "border-border text-foreground",
-        destructive: "bg-destructive-soft text-destructive",
-        preparing: "bg-brand-soft text-[color-mix(in_oklch,var(--brand-strong),var(--foreground)_55%)] dark:text-brand",
-        out_for_delivery: "bg-teal-soft text-teal",
-        delivered: "bg-success-soft text-success",
+        neutral: "bg-muted text-muted-foreground",
+        preparing: "bg-preparing-soft text-preparing",
+        out_for_delivery: "bg-transit-soft text-transit",
+        delivered: "bg-go-soft text-go",
         cancelled: "bg-muted text-muted-foreground",
-        late: "bg-chili text-white dark:text-[#0b1322]",
+        late: "bg-late text-white before:bg-white dark:text-[#1a0b0a] dark:before:bg-[#1a0b0a]",
+        active: "bg-go-soft text-go",
+        inactive: "bg-late-soft text-late",
       },
     },
-    defaultVariants: {
-      variant: "default",
-    },
+    defaultVariants: { variant: "neutral" },
   }
 )
 
 function Badge({
   className,
-  variant = "default",
+  variant = "neutral",
   render,
   ...props
 }: useRender.ComponentProps<"span"> & VariantProps<typeof badgeVariants>) {
   return useRender({
     defaultTagName: "span",
-    props: mergeProps<"span">(
-      {
-        className: cn(badgeVariants({ variant }), className),
-      },
-      props
-    ),
+    props: mergeProps<"span">({ className: cn(badgeVariants({ variant }), className) }, props),
     render,
-    state: {
-      slot: "badge",
-      variant,
-    },
+    state: { slot: "badge", variant },
   })
 }
 

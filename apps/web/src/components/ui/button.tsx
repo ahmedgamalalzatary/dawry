@@ -3,32 +3,33 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-[background-color,border-color,color,box-shadow,transform] duration-150 outline-none select-none focus-visible:ring-3 focus-visible:ring-ring/60 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg border border-transparent text-sm font-medium whitespace-nowrap transition-[background-color,border-color,color,box-shadow] duration-150 select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-45 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
+        /* Ink: the one primary action on a screen. */
         default:
-          "bg-primary text-primary-foreground shadow-[inset_0_-2px_0_rgb(0_0_0/0.18)] hover:bg-[color-mix(in_oklch,var(--primary),var(--background)_14%)]",
-        brand:
-          "bg-brand text-brand-foreground font-semibold shadow-[inset_0_-2px_0_rgb(0_0_0/0.14)] hover:bg-brand-strong",
+          "bg-primary text-primary-foreground hover:bg-[color-mix(in_oklab,var(--primary),var(--background)_16%)]",
         outline:
-          "border-border bg-card text-foreground hover:border-[color-mix(in_oklch,var(--border),var(--foreground)_25%)] hover:bg-muted aria-expanded:bg-muted",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_8%)]",
+          "border-border-strong bg-surface text-foreground hover:bg-muted aria-expanded:bg-muted",
+        secondary: "bg-muted text-foreground hover:bg-[color-mix(in_oklab,var(--muted),var(--foreground)_7%)]",
         ghost: "text-foreground hover:bg-muted aria-expanded:bg-muted",
         destructive:
-          "bg-destructive-soft text-destructive hover:bg-destructive hover:text-white focus-visible:ring-destructive/30",
-        success: "bg-success text-white hover:bg-[color-mix(in_oklch,var(--success),black_12%)]",
-        teal: "bg-teal text-white hover:bg-[color-mix(in_oklch,var(--teal),black_12%)] dark:text-[#0b1322]",
-        link: "h-auto px-0 text-foreground underline decoration-brand decoration-2 underline-offset-4 hover:decoration-foreground",
+          "border-border-strong bg-surface text-late hover:border-late/40 hover:bg-late-soft",
+        "destructive-solid": "bg-late text-white hover:bg-[color-mix(in_oklab,var(--late),black_12%)] dark:text-[#1a0b0a]",
+        /* Signal buttons move an order to its next state. */
+        transit: "bg-transit text-white hover:bg-[color-mix(in_oklab,var(--transit),black_12%)] dark:text-[#160f2b]",
+        go: "bg-go text-white hover:bg-[color-mix(in_oklab,var(--go),black_12%)] dark:text-[#04140e]",
+        link: "h-auto border-0 px-0 text-link underline-offset-4 hover:underline",
+        /* On the board (the dark shell). */
+        board: "text-board-muted hover:bg-board-raised hover:text-board-foreground",
       },
       size: {
         default: "h-10 px-4",
         xs: "h-7 gap-1 rounded-md px-2 text-xs [&_svg:not([class*='size-'])]:size-3.5",
         sm: "h-8 gap-1.5 rounded-md px-3 text-[0.8125rem] [&_svg:not([class*='size-'])]:size-3.5",
-        lg: "h-12 rounded-xl px-6 text-base",
+        lg: "h-12 rounded-xl px-5 text-base",
         icon: "size-10",
-        "icon-xs": "size-7 rounded-md [&_svg:not([class*='size-'])]:size-3.5",
         "icon-sm": "size-8 rounded-md",
         "icon-lg": "size-12 rounded-xl",
       },

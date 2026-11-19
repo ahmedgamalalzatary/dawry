@@ -8,7 +8,7 @@ export function FormError({ children, className }: { children: React.ReactNode; 
     <p
       role="alert"
       className={cn(
-        "bg-destructive-soft text-destructive flex items-start gap-2 rounded-lg px-3 py-2.5 text-sm font-medium",
+        "bg-late-soft text-late flex items-start gap-2 rounded-lg px-3 py-2.5 text-sm font-medium",
         className,
       )}
     >

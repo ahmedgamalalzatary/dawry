@@ -7,8 +7,13 @@ import * as service from "./service";
 export function reportRoutes(deps: Deps) {
   const router = Router();
 
-  router.get("/reports", requireOwner, async (_req, res) => {
-    res.json(await service.report(deps.db, currentRestaurant(res).id, deps));
+  router.get("/reports", requireOwner, async (req, res) => {
+    res.json(await service.report(deps.db, currentRestaurant(res).id, deps, service.parseRange(req.query.days)));
+  });
+
+  router.get("/reports/data", requireOwner, async (req, res) => {
+    const period = service.parsePeriod(req.query, deps);
+    res.json(await service.reportData(deps.db, currentRestaurant(res).id, deps, period));
   });
 
   return router;

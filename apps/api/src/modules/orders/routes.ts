@@ -11,8 +11,9 @@ export function orderRoutes(deps: Deps) {
   const { db, bus } = deps;
   const router = Router();
 
-  router.get("/orders", async (_req, res) => {
-    res.json(await service.listOrders(db, currentRestaurant(res).id, deps));
+  router.get("/orders", async (req, res) => {
+    const day = typeof req.query.day === "string" ? req.query.day : undefined;
+    res.json(await service.listOrders(db, currentRestaurant(res).id, deps, day));
   });
 
   router.post("/orders", async (req, res) => {

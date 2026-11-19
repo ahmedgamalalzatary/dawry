@@ -5,6 +5,7 @@
 import { relations } from "drizzle-orm";
 import {
   boolean,
+  customType,
   index,
   int,
   mysqlTable,
@@ -163,6 +164,20 @@ export const restaurantSettings = mysqlTable("restaurant_settings", {
   logoUrl: varchar("logo_url", { length: 500 }).default("").notNull(),
   active: boolean("active").default(true).notNull(),
   createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+const mediumBlob = customType<{ data: Buffer; driverData: Buffer }>({
+  dataType: () => "mediumblob",
+});
+
+/** An uploaded restaurant logo (served from /api/public/logos/:id). */
+export const restaurantLogo = mysqlTable("restaurant_logo", {
+  organizationId: varchar("organization_id", { length: 36 })
+    .primaryKey()
+    .references(() => organization.id, { onDelete: "cascade" }),
+  mime: varchar("mime", { length: 32 }).notNull(),
+  data: mediumBlob("data").notNull(),
   updatedAt: updatedAt(),
 });
 

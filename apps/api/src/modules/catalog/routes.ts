@@ -6,11 +6,16 @@ import { parse } from "../../http/validate";
 import * as service from "./service";
 
 /** Menu items and custom fields: staff read, owner writes. Mounted inside the restaurant router. */
-export function catalogRoutes({ db }: Deps) {
+export function catalogRoutes(deps: Deps) {
+  const { db } = deps;
   const router = Router();
 
   router.get("/menu", async (_req, res) => {
     res.json(await service.listMenu(db, currentRestaurant(res).id));
+  });
+
+  router.get("/menu/:id", requireOwner, async (req, res) => {
+    res.json(await service.menuItemDetail(db, currentRestaurant(res).id, String(req.params.id), deps));
   });
 
   router.post("/menu", requireOwner, async (req, res) => {

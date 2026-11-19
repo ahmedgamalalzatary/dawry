@@ -32,3 +32,14 @@ export async function isStaffOf(db: Db, restaurantId: string, userId: string) {
     .limit(1);
   return Boolean(row);
 }
+
+/** Owner or staff member of this restaurant. */
+export async function findMember(db: Db, restaurantId: string, userId: string) {
+  const [row] = await db
+    .select({ id: user.id, name: user.name, username: user.username, createdAt: member.createdAt, role: member.role })
+    .from(member)
+    .innerJoin(user, eq(user.id, member.userId))
+    .where(and(eq(member.organizationId, restaurantId), eq(member.userId, userId)))
+    .limit(1);
+  return row ?? null;
+}

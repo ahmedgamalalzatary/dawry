@@ -45,3 +45,18 @@ export function formatTime(iso: string, locale: string, timeZone = DEFAULT_TIME_
     timeZone,
   }).format(new Date(iso));
 }
+
+/** 0.836 → "84%"; null → "—". */
+export function formatPercent(rate: number | null) {
+  return rate === null ? "—" : `${Math.round(rate * 100)}%`;
+}
+
+/** A business day ("2026-11-19") in the reader's language, e.g. "Thu 19 Nov". */
+export function formatDay(day: string, locale: string, options: Intl.DateTimeFormatOptions = { weekday: "short", day: "numeric", month: "short" }) {
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG-u-nu-latn" : "en-GB", { ...options, timeZone: "UTC" }).format(
+    new Date(`${day}T00:00:00Z`),
+  );
+}
+
+/** "2026-11-05" → "5/11" (Western digits, no locale marks: chart axes are left-to-right). */
+export const shortDay = (day: string) => `${Number(day.slice(8, 10))}/${Number(day.slice(5, 7))}`;

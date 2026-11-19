@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-/** The restaurant's logo, or its first letter on an ink tile. */
+/** The restaurant's logo, or its first letter on a board tile. */
 export function RestaurantAvatar({
   name,
   logoUrl,
@@ -17,7 +17,7 @@ export function RestaurantAvatar({
         src={logoUrl}
         alt=""
         referrerPolicy="no-referrer"
-        className={cn("size-11 shrink-0 rounded-xl object-cover ring-1 ring-black/5", className)}
+        className={cn("size-10 shrink-0 rounded-lg bg-white object-cover ring-1 ring-black/5", className)}
       />
     );
   }
@@ -25,7 +25,7 @@ export function RestaurantAvatar({
     <span
       aria-hidden
       className={cn(
-        "bg-ink text-brand flex size-11 shrink-0 items-center justify-center rounded-xl text-lg font-bold dark:bg-[#1d2a45]",
+        "bg-board text-board-foreground font-heading flex size-10 shrink-0 items-center justify-center rounded-lg text-base font-semibold",
         className,
       )}
     >

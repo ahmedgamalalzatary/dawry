@@ -1,13 +1,13 @@
 "use client";
 
-import { Receipt } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { orderPath } from "@/lib/routes";
 
-/** The invoice number is typed onto a blank ticket. */
+/** One question, one big field: the number printed on the receipt. */
 export function InvoiceForm({ slug }: { slug: string }) {
   const t = useTranslations("restaurant");
   const router = useRouter();
@@ -22,30 +22,32 @@ export function InvoiceForm({ slug }: { slug: string }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="ticket-shadow">
-      <div className="ticket-top bg-brand text-brand-foreground rounded-t-3xl px-6 pt-6 pb-7">
-        <label htmlFor="invoice" className="flex items-center justify-center gap-2 text-sm font-semibold">
-          <Receipt aria-hidden className="size-4" />
+    <form onSubmit={onSubmit} className="bg-surface shadow-raise flex flex-col gap-4 rounded-2xl border p-5 sm:p-6">
+      <div className="flex flex-col gap-1">
+        <label htmlFor="invoice" className="font-heading text-lg font-semibold">
           {t("invoice")}
         </label>
-        <input
-          id="invoice"
-          name="invoice"
-          required
-          maxLength={32}
-          inputMode="numeric"
-          autoComplete="off"
-          dir="ltr"
-          placeholder="000"
-          className="placeholder:text-brand-foreground/25 mt-3 w-full rounded-2xl border-2 border-black/15 bg-white/55 py-3 text-center text-5xl font-bold tracking-wider tabular-nums transition outline-none focus-visible:border-[#16233f] focus-visible:bg-white/80"
-        />
+        <p id="invoice-hint" className="text-muted-foreground text-sm">
+          {t("invoiceHint")}
+        </p>
       </div>
-      <div className="ticket-bottom bg-card rounded-b-3xl px-6 pb-6">
-        <div className="perforation mx-1 mb-5" />
-        <Button type="submit" variant="default" size="lg" className="w-full" disabled={pending}>
-          {t("check")}
-        </Button>
-      </div>
+      <input
+        id="invoice"
+        name="invoice"
+        required
+        maxLength={32}
+        inputMode="numeric"
+        autoComplete="off"
+        autoFocus
+        dir="ltr"
+        placeholder="000"
+        aria-describedby="invoice-hint"
+        className="figure border-input bg-subtle placeholder:text-muted-foreground/35 focus-visible:border-ring focus-visible:ring-ring/20 h-20 w-full rounded-xl border text-center text-5xl font-semibold tracking-wide transition-[border-color,box-shadow] outline-none focus-visible:ring-4"
+      />
+      <Button type="submit" size="lg" disabled={pending}>
+        {t("check")}
+        <ArrowLeft aria-hidden className="ltr:rotate-180" />
+      </Button>
     </form>
   );
 }

@@ -2,7 +2,9 @@ import { randomUUID } from "node:crypto";
 import {
   canTransition,
   computeEtaAt,
+  isLate,
   type CreateOrderInput,
+  type OrderSummary,
   type EtaInput,
   type OrderStatus,
   type PublicOrder,
@@ -28,8 +30,15 @@ async function queueOf(db: Db, restaurantId: string, clock: Clock) {
   return repo.liveOrders(db, restaurantId, today, yesterday);
 }
 
-export async function listOrders(db: Db, restaurantId: string, clock: Clock) {
-  const rows = await queueOf(db, restaurantId, clock);
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/** The live queue, or every order of one past business day (`day`). */
+export async function listOrders(db: Db, restaurantId: string, clock: Clock, day?: string) {
+  const { today } = currentDays(clock);
+  const rows =
+    day && DAY.test(day) && day !== today
+      ? await repo.ordersOfDay(db, restaurantId, day)
+      : await queueOf(db, restaurantId, clock);
   const { items, fields } = await repo.itemsAndFields(
     db,
     rows.map((r) => r.id),
@@ -50,7 +59,29 @@ export async function getOrder(db: Db, restaurantId: string, orderId: string, cl
     queueOf(db, restaurantId, clock),
     repo.itemsAndFields(db, [row.id]),
   ]);
-  return toStaffOrder(row, items, fields, queue, clock.now());
+  const createdBy = row.createdById ? await repo.userName(db, row.createdById) : null;
+  return { ...toStaffOrder(row, items, fields, queue, clock.now()), createdBy };
+}
+
+/** Short lines for a history list. */
+export async function summaries(db: Db, rows: repo.OrderRow[], clock: Clock): Promise<OrderSummary[]> {
+  const { items } = await repo.itemsAndFields(
+    db,
+    rows.map((r) => r.id),
+  );
+  const now = clock.now();
+  return rows.map((r) => ({
+    id: r.id,
+    invoiceNumber: r.invoiceNumber,
+    businessDay: r.businessDay,
+    status: r.status,
+    etaAt: r.etaAt.toISOString(),
+    late: isLate(r, now),
+    createdAt: r.createdAt.toISOString(),
+    outAt: r.outAt ? r.outAt.toISOString() : null,
+    itemCount: items.filter((i) => i.orderId === r.id).reduce((n, i) => n + i.quantity, 0),
+    customerName: r.customerName,
+  }));
 }
 
 export async function createOrder(

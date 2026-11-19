@@ -7,6 +7,7 @@ import { Router } from "express";
 import type { Deps } from "../../deps";
 import { requireAdmin } from "../../http/guards";
 import { parse } from "../../http/validate";
+import { parsePeriod, parseRange, reportData } from "../reports/service";
 import * as service from "./service";
 
 /** Super-admin only. Mounted at /api/admin. */
@@ -17,6 +18,21 @@ export function adminRoutes(deps: Deps) {
 
   router.get("/restaurants", async (_req, res) => {
     res.json(await service.listRestaurants(db, deps));
+  });
+
+  router.get("/restaurants/:id", async (req, res) => {
+    res.json(await service.restaurantDetail(db, String(req.params.id), deps, parseRange(req.query.days)));
+  });
+
+  router.get("/reports", async (req, res) => {
+    res.json(await service.platformReport(db, deps, parseRange(req.query.days)));
+  });
+
+  router.get("/reports/data", async (req, res) => {
+    const period = parsePeriod(req.query, deps);
+    const data = await reportData(db, null, deps, period);
+    const growth = await service.growthBetween(db, period);
+    res.json({ ...data, growth });
   });
 
   router.post("/restaurants", async (req, res) => {

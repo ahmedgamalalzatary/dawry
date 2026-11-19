@@ -15,6 +15,13 @@
       "when": 1795077589017,
       "tag": "0001_cuddly_cloak",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1795085279868,
+      "tag": "0002_natural_sabretooth",
+      "breakpoints": true
     }
   ]
 }

@@ -6,6 +6,7 @@ import {
   customerSignUpSchema,
   etaInputSchema,
   normalizePhone,
+  restaurantSettingsSchema,
 } from "../src/schemas";
 
 describe("normalizePhone", () => {
@@ -31,6 +32,10 @@ describe("createRestaurantSchema", () => {
 
   it("rejects slugs with spaces or capitals", () => {
     expect(createRestaurantSchema.safeParse({ ...valid, slug: "Pizza X" }).success).toBe(false);
+  });
+
+  it.each(["staff", "admin"])("rejects the reserved slug %s (used by sign-in pages)", (slug) => {
+    expect(createRestaurantSchema.safeParse({ ...valid, slug }).success).toBe(false);
   });
 
   it("rejects phones that are too short", () => {
@@ -115,5 +120,21 @@ describe("customerSignUpSchema", () => {
       customerSignUpSchema.safeParse({ name: " ", phone: "01000000000", password: "secret-123" })
         .success,
     ).toBe(false);
+  });
+});
+
+describe("restaurantSettingsSchema logoUrl", () => {
+  const parse = (logoUrl: string) => restaurantSettingsSchema.safeParse({ name: "Roma", logoUrl }).success;
+
+  it("accepts an https URL, an uploaded logo path, or nothing", () => {
+    expect(parse("https://example.com/logo.png")).toBe(true);
+    expect(parse("/api/public/logos/3f2b6c1e-8a4d-4e7a-9b1c-2d3e4f5a6b7c?v=1732000000000")).toBe(true);
+    expect(parse("")).toBe(true);
+  });
+
+  it("rejects other paths and schemes", () => {
+    expect(parse("/api/public/logos/../../etc?v=1")).toBe(false);
+    expect(parse("/somewhere/else.png")).toBe(false);
+    expect(parse("javascript:alert(1)")).toBe(false);
   });
 });

@@ -1,52 +1,47 @@
-import { Ban, ExternalLink } from "lucide-react";
-import Link from "next/link";
+import { Ban } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import { RestaurantAvatar } from "@/components/customer/restaurant-avatar";
-import { DashboardNav } from "@/components/dashboard/dashboard-nav";
-import { buttonVariants } from "@/components/ui/button";
+import { AppShell, type ShellNavItem } from "@/components/layout/app-shell";
 import { requireKind } from "@/lib/api/server";
 
+const OWNER_PAGES = ["staff", "menu", "fields", "settings", "reports"] as const;
+
 export default async function DashboardLayout({ children }: LayoutProps<"/dashboard">) {
-  const me = await requireKind("owner", "staff");
-  const t = await getTranslations("dashboard");
+  const me = await requireKind("staff", "owner");
+  const [t, tn, ta] = await Promise.all([
+    getTranslations("dashboard"),
+    getTranslations("dashboard.nav"),
+    getTranslations("app"),
+  ]);
   const restaurant = me.restaurant;
   const owner = me.kind === "owner";
+  const name = restaurant?.name ?? ta("name");
+
+  const nav: ShellNavItem[] = [
+    { href: "/dashboard", label: tn("orders"), icon: "orders" },
+    ...(owner ? OWNER_PAGES.map((key) => ({ href: `/dashboard/${key}`, label: tn(key), icon: key })) : []),
+  ];
 
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pt-6 pb-16">
-      <div className="flex flex-col gap-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <RestaurantAvatar name={restaurant?.name ?? "?"} logoUrl={null} />
-            <div className="flex min-w-0 flex-col">
-              <h1 className="truncate text-2xl font-bold tracking-tight">{restaurant?.name}</h1>
-              <span className="text-muted-foreground text-sm">{owner ? t("roleOwner") : t("roleStaff")}</span>
-            </div>
-          </div>
-          {restaurant?.slug ? (
-            <Link
-              href={`/r/${restaurant.slug}`}
-              target="_blank"
-              className={buttonVariants({ variant: "outline", size: "sm" })}
-            >
-              <ExternalLink aria-hidden />
-              {t("customerPage")}
-            </Link>
-          ) : null}
-        </div>
-        <DashboardNav owner={owner} />
-      </div>
+    <AppShell
+      appName={ta("name")}
+      context={{ title: name, subtitle: owner ? t("roleOwner") : t("roleStaff"), initial: name.slice(0, 1) }}
+      nav={nav}
+      external={restaurant?.slug ? { href: `/r/${restaurant.slug}`, label: t("customerPage") } : undefined}
+      user={{ name: me.name, detail: me.username }}
+      signOutTo={owner ? "/r/admin/login" : "/r/staff/login"}
+    >
       {restaurant?.active === false ? (
-        <div
-          role="alert"
-          className="bg-destructive-soft text-destructive flex items-center gap-3 rounded-2xl p-5 font-medium"
-        >
-          <Ban aria-hidden className="size-6 shrink-0" />
-          {t("suspended")}
+        <div className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center gap-4 px-6 py-16 text-center">
+          <span className="bg-late-soft text-late flex size-14 items-center justify-center rounded-full">
+            <Ban aria-hidden className="size-7" />
+          </span>
+          <p role="alert" className="text-lg font-medium text-balance">
+            {t("suspended")}
+          </p>
         </div>
       ) : (
         children
       )}
-    </main>
+    </AppShell>
   );
 }

@@ -3,7 +3,7 @@ import type { Me } from "@dawry/shared";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
-import { homeFor } from "../routes";
+import { homeFor, LOGIN } from "../routes";
 
 const API = process.env.API_INTERNAL_URL ?? "http://localhost:4000";
 
@@ -25,10 +25,10 @@ export async function serverGet<T>(path: string): Promise<T | null> {
 /** The signed-in account for this request (deduplicated per render). */
 export const getMe = cache(() => serverGet<Me>("/api/me"));
 
-/** Redirect to /login unless the visitor is one of `kinds`. */
+/** Redirect to the sign-in page of the first allowed role unless the visitor is one of `kinds`. */
 export async function requireKind(...kinds: Me["kind"][]) {
   const me = await getMe();
-  if (!me) redirect("/login");
+  if (!me) redirect(LOGIN[kinds[0] ?? "customer"]);
   if (!kinds.includes(me.kind)) redirect(homeFor(me));
   return me;
 }
