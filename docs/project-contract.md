@@ -39,8 +39,10 @@ SMS/WhatsApp notifications, delivery tracking.
   Every mode stores one absolute `etaAt` timestamp. Staff can change it later.
 - **Statuses**: `preparing` → `out_for_delivery` → `delivered`. `cancelled` is
   allowed from `preparing` or `out_for_delivery`. No other transitions.
-- **Queue ("orders before you")**: count of the restaurant's other orders that
-  are `preparing` today and whose `etaAt` is earlier than this order's (ties:
+- **Live orders** = today's orders plus yesterday's unfinished ones (so an order
+  entered at 23:50 is still found and queued at 00:10).
+- **Queue ("orders before you")**: count of the restaurant's other live orders
+  that are `preparing` and whose `etaAt` is earlier than this order's (ties:
   earlier `createdAt` first). An order leaves the queue when it goes out for
   delivery or is cancelled. Only meaningful while this order is `preparing`.
 - **Late**: an order is late when it is `preparing` and now > `etaAt`. The
@@ -50,8 +52,8 @@ SMS/WhatsApp notifications, delivery tracking.
 ### 1.2 Customer pages
 
 - `/r/<slug>`: restaurant name/logo + invoice number form.
-- `/r/<slug>/<invoice>`: today's order with that invoice number. The QR code on
-  the receipt points here.
+- `/r/<slug>/<invoice>`: the live order with that invoice number (today's first).
+  The QR code on the receipt points here.
 - Shows: logo/name, status steps, items, public custom fields, orders before
   you, ETA (per mode), late/cancelled messages. Updates live.
 - Never shows built-in fields or private custom fields.
@@ -100,8 +102,13 @@ apps/api/src/
   migrate.ts           applies drizzle migrations (production)
   auth.ts              Better Auth config
   db/                  client + schema
-  http/                errors, validation, auth guards, SSE helpers
-  modules/<name>/      routes.ts (HTTP) + service.ts (rules + queries)
+  deps.ts              Deps passed to every module (db, auth, bus, clock, config)
+  http/                errors, validation, guards, origin (CSRF) check, SSE
+  modules/<name>/
+    routes.ts          HTTP only: guards, parse input, call service, send JSON
+    service.ts         business rules; calls repo; throws HttpErrors
+    repo.ts            all Drizzle queries for the module; no rules
+    helpers.ts         pure mappers/calculations (row → API type), optional
   cli/                 one-off commands run via package scripts
 apps/api/test/         tests, next to src (helpers/ for shared test code)
 apps/web/src/app/      routes
@@ -134,6 +141,16 @@ packages/shared/src/   + packages/shared/test/
 
 The restaurant for `/api/restaurant/*` always comes from the session's
 membership, never from the URL or body. A user belongs to at most one restaurant.
+
+Modules: `accounts` (shared account helpers), `admin`, `orders`, `staff`,
+`catalog` (menu + custom fields), `settings`, `reports`, `public`, `customer`
+(sign-up + `/api/me`). Restaurant modules are mounted inside one
+`/api/restaurant` router that loads the membership once; owner-only routes add
+`requireOwner`.
+
+The super-admin is created from the CLI: `ADMIN_NAME=… ADMIN_USERNAME=…
+ADMIN_PASSWORD=… pnpm --filter @dawry/api admin:create` (production:
+`node dist/cli/create-admin.js` in the api container).
 
 ## 4. Security
 

@@ -10,7 +10,9 @@ x-api-env: &api-env
   BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
   BETTER_AUTH_URL: ${BETTER_AUTH_URL}
   WEB_ORIGIN: ${WEB_ORIGIN}
+  APP_TIME_ZONE: ${APP_TIME_ZONE:-Africa/Cairo}
   API_PORT: 4000
+  NODE_ENV: production
 
 services:
   mysql:
@@ -56,7 +58,7 @@ services:
       context: .
       dockerfile: Dockerfile.web
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        API_INTERNAL_URL: http://api:4000
     restart: unless-stopped
     depends_on:
       - api

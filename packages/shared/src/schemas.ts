@@ -101,7 +101,9 @@ export const customFieldSchema = z.object({
 export const restaurantSettingsSchema = z.object({
   name: requiredText(),
   phone: z.union([phoneSchema, z.literal("")]).default(""),
-  logoUrl: z.union([z.url().max(LIMITS.text), z.literal("")]).default(""),
+  logoUrl: z
+    .union([z.url({ protocol: /^https?$/ }).max(LIMITS.text), z.literal("")])
+    .default(""),
 });
 
 // ---- orders ----------------------------------------------------------------

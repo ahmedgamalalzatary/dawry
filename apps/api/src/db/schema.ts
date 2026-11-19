@@ -6,9 +6,12 @@ import { relations } from "drizzle-orm";
 import {
   boolean,
   index,
+  int,
   mysqlTable,
+  primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   varchar,
 } from "drizzle-orm/mysql-core";
 
@@ -142,6 +145,149 @@ export const invitation = mysqlTable(
     index("invitation_organization_id_idx").on(t.organizationId),
     index("invitation_email_idx").on(t.email),
   ],
+);
+
+// ---- Dawry domain ----------------------------------------------------------
+
+const orgId = () =>
+  varchar("organization_id", { length: 36 })
+    .notNull()
+    .references(() => organization.id, { onDelete: "cascade" });
+
+/** One row per restaurant (organization). */
+export const restaurantSettings = mysqlTable("restaurant_settings", {
+  organizationId: varchar("organization_id", { length: 36 })
+    .primaryKey()
+    .references(() => organization.id, { onDelete: "cascade" }),
+  phone: varchar("phone", { length: 20 }).default("").notNull(),
+  logoUrl: varchar("logo_url", { length: 500 }).default("").notNull(),
+  active: boolean("active").default(true).notNull(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+export const menuItem = mysqlTable(
+  "menu_item",
+  {
+    id: id(),
+    organizationId: orgId(),
+    name: varchar("name", { length: 100 }).notNull(),
+    active: boolean("active").default(true).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("menu_item_org_idx").on(t.organizationId)],
+);
+
+export const customField = mysqlTable(
+  "custom_field",
+  {
+    id: id(),
+    organizationId: orgId(),
+    label: varchar("label", { length: 100 }).notNull(),
+    required: boolean("required").default(false).notNull(),
+    public: boolean("public").default(false).notNull(),
+    active: boolean("active").default(true).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("custom_field_org_idx").on(t.organizationId)],
+);
+
+export const orders = mysqlTable(
+  "orders",
+  {
+    id: id(),
+    organizationId: orgId(),
+    invoiceNumber: varchar("invoice_number", { length: 32 }).notNull(),
+    businessDay: varchar("business_day", { length: 10 }).notNull(),
+    status: varchar("status", { length: 20 })
+      .$type<"preparing" | "out_for_delivery" | "delivered" | "cancelled">()
+      .default("preparing")
+      .notNull(),
+    etaMode: varchar("eta_mode", { length: 10 })
+      .$type<"countdown" | "clock" | "minutes">()
+      .notNull(),
+    etaAt: timestamp("eta_at", { fsp: 3 }).notNull(),
+    customerName: varchar("customer_name", { length: 100 }).default("").notNull(),
+    customerPhone: varchar("customer_phone", { length: 20 }).default("").notNull(),
+    address: varchar("address", { length: 500 }).default("").notNull(),
+    notes: varchar("notes", { length: 500 }).default("").notNull(),
+    createdById: varchar("created_by_id", { length: 36 }).references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    outAt: timestamp("out_at", { fsp: 3 }),
+    deliveredAt: timestamp("delivered_at", { fsp: 3 }),
+    cancelledAt: timestamp("cancelled_at", { fsp: 3 }),
+  },
+  (t) => [
+    uniqueIndex("orders_invoice_per_day_uq").on(t.organizationId, t.businessDay, t.invoiceNumber),
+    index("orders_org_day_status_idx").on(t.organizationId, t.businessDay, t.status),
+  ],
+);
+
+export const orderItem = mysqlTable(
+  "order_item",
+  {
+    id: id(),
+    orderId: varchar("order_id", { length: 36 })
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    menuItemId: varchar("menu_item_id", { length: 36 }).references(() => menuItem.id, {
+      onDelete: "set null",
+    }),
+    name: varchar("name", { length: 100 }).notNull(),
+    quantity: int("quantity").notNull(),
+    position: int("position").notNull(),
+  },
+  (t) => [index("order_item_order_idx").on(t.orderId)],
+);
+
+/** Label and visibility are copied from the field when the order is created. */
+export const orderFieldValue = mysqlTable(
+  "order_field_value",
+  {
+    id: id(),
+    orderId: varchar("order_id", { length: 36 })
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    fieldId: varchar("field_id", { length: 36 }).references(() => customField.id, {
+      onDelete: "set null",
+    }),
+    label: varchar("label", { length: 100 }).notNull(),
+    public: boolean("public").notNull(),
+    value: varchar("value", { length: 500 }).notNull(),
+    position: int("position").notNull(),
+  },
+  (t) => [index("order_field_value_order_idx").on(t.orderId)],
+);
+
+export const savedOrder = mysqlTable(
+  "saved_order",
+  {
+    userId: varchar("user_id", { length: 36 })
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    orderId: varchar("order_id", { length: 36 })
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.orderId] })],
+);
+
+export const favoriteRestaurant = mysqlTable(
+  "favorite_restaurant",
+  {
+    userId: varchar("user_id", { length: 36 })
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    organizationId: orgId(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.organizationId] })],
 );
 
 export const userRelations = relations(user, ({ many }) => ({

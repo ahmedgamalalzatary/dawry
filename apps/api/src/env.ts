@@ -6,6 +6,7 @@ const envSchema = z.object({
   BETTER_AUTH_URL: z.url(),
   API_PORT: z.coerce.number().int().positive().default(4000),
   WEB_ORIGIN: z.url(),
+  APP_TIME_ZONE: z.string().min(1).default("Africa/Cairo"),
 });
 
 export type Env = z.infer<typeof envSchema>;

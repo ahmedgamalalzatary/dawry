@@ -12,7 +12,8 @@
     "start": "node --env-file=../../.env dist/index.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "admin:create": "tsx --env-file=../../.env src/cli/create-admin.ts"
   },
   "dependencies": {
     "@dawry/shared": "workspace:*",
@@ -20,6 +21,7 @@
     "cors": "^2.8.5",
     "drizzle-orm": "^0.45.4",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.7.4",
     "helmet": "^8.1.0",
     "mysql2": "^3.24.6",
     "zod": "^4.6.7"
